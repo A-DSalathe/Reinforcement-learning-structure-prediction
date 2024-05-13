@@ -54,10 +54,12 @@ def spectra_from_arrays(
 
     # Might need to adapt this depending on os, but it helps
     shutil.rmtree("ir", ignore_errors=True)
+    spectrum_array = np.array([energy_range, spectrum]).T
+    return spectrum_array
 
 
 def test():
-    spectra_from_arrays()
+    return spectra_from_arrays()
 
 
 if __name__ == "__main__":
