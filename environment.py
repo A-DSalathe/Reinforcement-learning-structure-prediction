@@ -41,6 +41,8 @@ class Simple_Environment:
         self.n_actions = len(self.actions)
         self.covalent_radii = 0.4
         self.done = False
+        self.chem_symbols = ["B"]
+        self.name = "test"
 
     def get_actions(self):
         zero_indices = np.where(self.state == 0)
@@ -53,6 +55,7 @@ class Simple_Environment:
         self.done = False
         self.state[dimensions[0]//2, dimensions[1]//2, dimensions[2]//2] = 1
         self.actions  = self.get_actions()
+        self.chem_symbols = ["B"]
         return self.state
 
     def step(self, action):
@@ -61,6 +64,7 @@ class Simple_Environment:
         reward = self.get_reward(action)
         self.state[action] = 1
         self.actions = self.get_actions()
+        self.chem_symbols.append("B")
         
         return self.state, reward
 
@@ -81,7 +85,8 @@ class Simple_Environment:
         #self.state = spectra_from_arrays()
         ref_spectra_y = ref_spectra[:,1]
         # Compute the difference between the current state spectra and the reference spectra
-        return np.linalg.norm(self.state - ref_spectra_y, ord=2)
+        spectra = spectra_from_arrays(positions=np.array(self.actions)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name)
+        return np.linalg.norm(spectra - self.ref_spectra, ord=2)
     # def encoded_action(self, action):
     #     return np.ravel_multi_index(action, self.state.shape)
 
@@ -128,22 +133,19 @@ class Simple_Environment:
         #                     f.write(f"B {x:.8f} {y:.8f} {z:.8f}\n")
 
 if __name__ == "__main__":
-
-    dim = (2,3,4)
-    test = np.zeros(dim)
-    print(test)
-    print(test.shape)
-    test[1,1,1] = 1
-    test[1,1,1] = 1
-    test[1,2,3] = 1
-    where_test = np.where(test == 1)
-    print(where_test)
-    coords = list(zip(*where_test))
-    print(coords)
-    test2 = test.flatten()
-    print(np.where(test2))
-    print(np.inf)
-
-    env = Simple_Environment()
-    print(env.ref_spectra[0:3,:])
+    print(test())
+    # dim = (2,3,4)
+    # test = np.zeros(dim)
+    # print(test)
+    # print(test.shape)
+    # test[1,1,1] = 1
+    # test[1,2,3] = 1
+    # where_test = np.where(test == 1)
+    # print(where_test)
+    # coords = list(zip(*where_test))
+    # print(coords)
+    # test2 = test.flatten()
+    # print(np.where(test2))
+    # print(np.inf)
+    # env = Simple_Environment()
     # print(env)
