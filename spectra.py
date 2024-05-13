@@ -30,6 +30,7 @@ def spectra_from_arrays(
     positions: np.ndarray = np.array([[0, 0, 0]]),
     chemical_symbols: list = ["B"],
     name: str = "test",
+    writing: bool = True,
 ):
     assert len(chemical_symbols) == positions.shape[0]
     nanoparticle = Atoms(chemical_symbols, positions)
@@ -40,17 +41,17 @@ def spectra_from_arrays(
     energy_range, spectrum = ir.get_spectrum(
         start=0, end=1000, width=10, normalize=True
     )
-
-    ir.write_spectra(f"{name}.dat", start=0, end=1000, width=10)
-    ax = plt.axes(label="IR")
-    ax = plot_spectrum(
-        x=energy_range,
-        y=spectrum,
-        xlabel=r"$\tilde\nu$ / (cm$^{-1}$)",
-        ylabel=r"IR intensity (a.u.)",
-        ax=ax,
-    )
-    plt.savefig(f"{name}.png")
+    if writing:
+        ir.write_spectra(f"{name}.dat", start=0, end=1000, width=10)
+        ax = plt.axes(label="IR")
+        ax = plot_spectrum(
+            x=energy_range,
+            y=spectrum,
+            xlabel=r"$\tilde\nu$ / (cm$^{-1}$)",
+            ylabel=r"IR intensity (a.u.)",
+            ax=ax,
+        )
+        plt.savefig(f"{name}.png")
 
     # Might need to adapt this depending on os, but it helps
     shutil.rmtree("ir", ignore_errors=True)
@@ -59,7 +60,7 @@ def spectra_from_arrays(
 
 
 def test():
-    return spectra_from_arrays()
+    return spectra_from_arrays(writing=False)
 
 
 if __name__ == "__main__":
