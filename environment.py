@@ -1,8 +1,12 @@
 import numpy as np
 import math
 from spectra import spectra_from_arrays
+from spectra import test
 from ase.vibrations import Infrared
 from ase import Atoms
+import os
+import os.path as op
+script_dir = op.dirname(op.realpath(__file__))
 
 def find_distances_to_new_point(array, new_point):
     # Check if the new point is within the array bounds
@@ -26,13 +30,18 @@ def find_distances_to_new_point(array, new_point):
     max_distance = np.max(distances)
     return min_distance, max_distance
 
+def path_to_refspectra(ref_spectra_path):
+        data = np.loadtxt(ref_spectra_path, skiprows=2)
+        return data
+
 class Simple_Environment:
-    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (11,11,11), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = 'references/reference_1_B.dat'):
+    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (11,11,11), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat'))):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
+        self.resolution = resolution
         self.state = np.zeros(dimensions)
-        self.ref_spectra = self.path_to_refspectra(ref_spectra_path)
+        self.ref_spectra = path_to_refspectra(ref_spectra_path)
         # self.n_state = math.comb(dimensions[0]*dimensions[1]*dimensions[2]-1, n_atoms-1)
         center = np.array(dimensions)//2
         self.state[center] = 1
@@ -83,23 +92,23 @@ class Simple_Environment:
     def diff_spectra(self):
         # Compute the spectra of the current state
         #self.state = spectra_from_arrays()
-        ref_spectra_y = ref_spectra[:,1]
+        ref_spectra_y = self.ref_spectra[:,1]
         # Compute the difference between the current state spectra and the reference spectra
         spectra = spectra_from_arrays(positions=np.array(self.actions)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name)
-        return np.linalg.norm(spectra - self.ref_spectra, ord=2)
+        spectra_y = spectra[:,1]
+        return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)
     # def encoded_action(self, action):
     #     return np.ravel_multi_index(action, self.state.shape)
 
     def render(self):
         print(self.state)
 
-    def path_to_refspectra(self,ref_spectra_path):
-        data = np.loadtxt(ref_spectra_path, skiprows=2)
-        return data
+    
 
     def make_spectra(self):
         #doit lire le fichier à chaque fois, il faudrait faire une fonction qui stock dans un array plutôt que faire ça
         #work in progress
+        pass
         nanoparticle = ase.io.read('nanoparticle.xyz')
         nanoparticle.calc = XTB3(method="GFN2-xTB", max_iterations=1000)
         ir = Infrared(nanoparticle)
@@ -110,6 +119,7 @@ class Simple_Environment:
         ir.write_spectra(f'spectra.dat', start=0, end=1000, width=10)
 
     def make_particle(self):
+        pass
         #create a position file similar to the one we have in references
         # with open('output_file.txt', 'w') as f:
         #     # Write number of atoms
@@ -132,8 +142,15 @@ class Simple_Environment:
         #                     # Write the atom position to the file
         #                     f.write(f"B {x:.8f} {y:.8f} {z:.8f}\n")
 
+
+
 if __name__ == "__main__":
-    print(test())
+    test_array = test()
+    print(test_array[:,1])
+    ref_path = op.join('references', 'reference_1_B.dat')
+    ref_path = op.join(script_dir, ref_path)
+    test_ref = path_to_refspectra(ref_path)
+    print(test_ref)
     # dim = (2,3,4)
     # test = np.zeros(dim)
     # print(test)
