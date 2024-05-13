@@ -148,11 +148,20 @@ class Simple_Environment:
 
 if __name__ == "__main__":
     # test_array = test()
+    # print(test_array[:,0])
     # print(test_array[:,1])
-    # ref_path = op.join('references', 'reference_1_B.dat')
-    # ref_path = op.join(script_dir, ref_path)
-    # test_ref = path_to_refspectra(ref_path)
-    # print(test_ref)
+    coords_atom = [(-0.47500000,-0.47500000,0.00000000),(0.47500000,0.47500000,0.00000000)]
+    chem_symbols = ["B","B"]
+    spectra_test = spectra_from_arrays(positions=np.array(coords_atom), chemical_symbols=chem_symbols, name='test', writing=True, normalize=False)
+    print('spectra test')
+    print(spectra_test[:,0])
+    print(spectra_test[:,1])
+    ref_path = op.join('references', 'reference_1_B.dat')
+    ref_path = op.join(script_dir, ref_path)
+    test_ref = path_to_refspectra(ref_path)
+    # print(test_ref[:,0])
+    print('ref')
+    print(test_ref[:,1])
     # dim = (2,3,4)
     # test = np.zeros(dim)
     # print(test)

@@ -31,6 +31,7 @@ def spectra_from_arrays(
     chemical_symbols: list = ["B"],
     name: str = "test",
     writing: bool = True,
+    normalize: bool = True,
 ):
     assert len(chemical_symbols) == positions.shape[0]
     nanoparticle = Atoms(chemical_symbols, positions)
@@ -39,10 +40,10 @@ def spectra_from_arrays(
     ir.run()
 
     energy_range, spectrum = ir.get_spectrum(
-        start=0, end=1000, width=10, normalize=True
+        start=0, end=1000, width=10, normalize=normalize
     )
     if writing:
-        ir.write_spectra(f"{name}.dat", start=0, end=1000, width=10)
+        ir.write_spectra(f"{name}.dat", start=0, end=1000, width=10, normalize=normalize)
         ax = plt.axes(label="IR")
         ax = plot_spectrum(
             x=energy_range,
@@ -55,6 +56,8 @@ def spectra_from_arrays(
 
     # Might need to adapt this depending on os, but it helps
     shutil.rmtree("ir", ignore_errors=True)
+    # print('freq',ir.get_frequencies())
+    # print('energy',ir.intensities)
     spectrum_array = np.array([energy_range, spectrum]).T
     return spectrum_array
 
