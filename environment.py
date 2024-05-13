@@ -93,8 +93,10 @@ class Simple_Environment:
         # Compute the spectra of the current state
         #self.state = spectra_from_arrays()
         ref_spectra_y = self.ref_spectra[:,1]
+        atom_pos = np.where(self.state == 1)
+        coords_atom = list(zip(*atom_pos))
         # Compute the difference between the current state spectra and the reference spectra
-        spectra = spectra_from_arrays(positions=np.array(self.actions)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name)
+        spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False)
         spectra_y = spectra[:,1]
         return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)
     # def encoded_action(self, action):
@@ -145,8 +147,8 @@ class Simple_Environment:
 
 
 if __name__ == "__main__":
-    test_array = test()
-    print(test_array[:,1])
+    # test_array = test()
+    # print(test_array[:,1])
     # ref_path = op.join('references', 'reference_1_B.dat')
     # ref_path = op.join(script_dir, ref_path)
     # test_ref = path_to_refspectra(ref_path)
