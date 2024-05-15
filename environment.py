@@ -68,7 +68,8 @@ class Simple_Environment:
         return self.state
 
     def step(self, action):
-        if self.state.count_nonzero() == self.n_atoms-1:
+
+        if self.state.sum() == self.n_atoms-1:
             self.done = True
         reward = self.get_reward(action)
         self.state[action] = 1
