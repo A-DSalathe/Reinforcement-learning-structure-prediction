@@ -15,10 +15,8 @@ def find_distances_to_new_point(array, new_point):
 
     # Find all existing points where the value is 1
     existing_points = np.argwhere(array == 1)
-    
     # Convert new_point to a numpy array for distance calculation
     new_point_array = np.array(new_point)
-    
     # Compute distances between the new point and all existing points
     if existing_points.size == 0:
         return None, None  # No existing points to compare against
@@ -35,7 +33,7 @@ def path_to_refspectra(ref_spectra_path):
         return data
 
 class Simple_Environment:
-    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (11,11,11), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat'))):
+    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (5,5,5), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat'))):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
@@ -43,7 +41,7 @@ class Simple_Environment:
         self.state = np.zeros(dimensions)
         self.ref_spectra = path_to_refspectra(ref_spectra_path)
         # self.n_state = math.comb(dimensions[0]*dimensions[1]*dimensions[2]-1, n_atoms-1)
-        center = np.array(dimensions)//2
+        center = (dimensions[0]//2, dimensions[1]//2, dimensions[2]//2)
         self.state[center] = 1
         zero_indices = np.where(self.state == 0)
         self.actions  = list(zip(*zero_indices))
@@ -68,7 +66,8 @@ class Simple_Environment:
         return self.state
 
     def step(self, action):
-        if self.state.count_nonzero() == self.n_atoms-1:
+
+        if self.state.sum() == self.n_atoms-1:
             self.done = True
         reward = self.get_reward(action)
         self.state[action] = 1
@@ -79,9 +78,10 @@ class Simple_Environment:
 
     def get_reward(self,action):
         min_distance, max_distance = find_distances_to_new_point(self.state, action)
-        if min_distance <= 0.5*self.covalent_radii:
+        print(min_distance, max_distance)
+        if min_distance <= 0.5*self.covalent_radii/self.resolution[0]:
             reward = -np.inf
-        elif max_distance >= 1.5*self.covalent_radii:
+        elif max_distance >= 1.5*self.covalent_radii/self.resolution[0]:
             reward = -np.inf
         else:
             reward = 0
@@ -177,7 +177,8 @@ if __name__ == "__main__":
     # print(np.inf)
     env = Simple_Environment()
     possible_actions = env.get_actions()
-    print(possible_actions)
-    state, reward = env.step(possible_actions[10])
+    # print(possible_actions)
+    state, reward = env.step(possible_actions[0])
+    print(state)
     print(reward)
     # print(env)
