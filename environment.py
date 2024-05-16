@@ -147,38 +147,17 @@ class Simple_Environment:
 
 
 if __name__ == "__main__":
-    # test_array = test()
-    # print(test_array[:,0])
-    # print(test_array[:,1])
-    # coords_atom = [(-0.47500000,-0.47500000,0.00000000),(0.47500000,0.47500000,0.00000000)]
-    # chem_symbols = ["B","B"]
-    # spectra_test = spectra_from_arrays(positions=np.array(coords_atom), chemical_symbols=chem_symbols, name='test', writing=False, normalize=False)
-    # print('spectra test')
-    # print(spectra_test[:,0])
-    # print(spectra_test[:,1])
-    # ref_path = op.join('references', 'reference_1_B.dat')
-    # ref_path = op.join(script_dir, ref_path)
-    # test_ref = path_to_refspectra(ref_path)
-    # # print(test_ref[:,0])
-    # print('ref')
-    # print(test_ref[:,1])
-    # dim = (2,3,4)
-    # test = np.zeros(dim)
-    # print(test)
-    # print(test.shape)
-    # test[1,1,1] = 1
-    # test[1,2,3] = 1
-    # where_test = np.where(test == 1)
-    # print(where_test)
-    # coords = list(zip(*where_test))
-    # print(coords)
-    # test2 = test.flatten()
-    # print(np.where(test2))
-    # print(np.inf)
+    
     env = Simple_Environment()
     possible_actions = env.get_actions()
     # print(possible_actions)
     state, reward = env.step(possible_actions[0])
     print(state)
     print(reward)
+    # name = 'bob'
+    # resolution = np.array([0.1,0.1,0.1])   
+    # num_coordinates = 10
+    # coords_atom = np.random.randint(0, 10, size=(num_coordinates, 3))
+    # chem_symbols = ["B"] * num_coordinates
+    # spectra = spectra_from_arrays(positions=np.array(coords_atom)*resolution, chemical_symbols=chem_symbols, name=name, writing=False)
     # print(env)
