@@ -48,7 +48,7 @@ def path_to_refspectra(ref_spectra_path):
         return data
 
 class Simple_Environment:
-    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (5,5,5), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat'))):
+    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (5,5,5), resolution=np.array([0.4,0.4,0.4]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat'))):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
@@ -78,10 +78,13 @@ class Simple_Environment:
         self.chem_symbols = ["B"]
         return self.state
 
-    def step(self, action):
+    def step(self, action, verbose=False):
         if (self.state.sum() == self.n_atoms-1) and (self.state[action] == 0):
             self.done = True
+        if verbose:
+            return self.get_reward(action, verbose=True)
         reward = self.get_reward(action)
+        
         self.cumulative_reward += reward
         self.state[action] = 1
         self.actions = self.get_actions()
@@ -89,7 +92,7 @@ class Simple_Environment:
         
         return self.state, reward
 
-    def get_reward(self, action):
+    def get_reward(self, action, verbose=False):
         min_distance = find_distances_to_new_point(self.state, action)
         reward = self.cumulative_reward
         
@@ -107,9 +110,10 @@ class Simple_Environment:
         else:
             reward = 0  # Reward close to 0 within the acceptable range
 
-        if self.done:
+        if self.done and not verbose:
             reward += -self.diff_spectra()
-        
+        elif self.done and verbose:
+            return self.diff_spectra(verbose=True)
         return reward
     
     def diff_spectra(self, verbose=False):
@@ -121,53 +125,16 @@ class Simple_Environment:
         # Compute the difference between the current state spectra and the reference spectra
         spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False)
         spectra_y = spectra[:,1]
-        if verbose
+        if verbose:
             return np.linalg.norm(spectra_y - ref_spectra_y, ord=2), ref_spectra_y, spectra_y
-        return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)
+        else:
+            return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)
+
     # def encoded_action(self, action):
     #     return np.ravel_multi_index(action, self.state.shape)
 
     def render(self):
         print(self.state)
-
-    
-
-    def make_spectra(self):
-        #doit lire le fichier à chaque fois, il faudrait faire une fonction qui stock dans un array plutôt que faire ça
-        #work in progress
-        pass
-        nanoparticle = ase.io.read('nanoparticle.xyz')
-        nanoparticle.calc = XTB3(method="GFN2-xTB", max_iterations=1000)
-        ir = Infrared(nanoparticle)
-        ir.run()
-        energy_range, spectrum = ir.get_spectrum(
-            start=0, end=1000, width=10, normalize=True
-        )
-        ir.write_spectra(f'spectra.dat', start=0, end=1000, width=10)
-
-    def make_particle(self):
-        pass
-        #create a position file similar to the one we have in references
-        # with open('output_file.txt', 'w') as f:
-        #     # Write number of atoms
-        #     num_atoms = np.sum(self.state)  # Count the number of atoms
-        #     f.write(f"{int(num_atoms)}\n")
-        #
-        #     # Write properties line
-        #     f.write("Properties=species:S:1:pos:R:3 pbc=\"F F F\"\n")
-        #
-        #     # Iterate over the positions in self.state
-        #     for i in range(dimensions[0]):
-        #         for j in range(dimensions[1]):
-        #             for k in range(dimensions[2]):
-        #                 # Check if the value is 1, indicating the presence of a "B" atom
-        #                 if self.state[i, j, k] == 1:
-        #                     # Calculate the position of the atom
-        #                     x = i * resolution[0] - 0.475
-        #                     y = j * resolution[1] - 0.475
-        #                     z = k * resolution[2]
-        #                     # Write the atom position to the file
-        #                     f.write(f"B {x:.8f} {y:.8f} {z:.8f}\n")
 
 
 
@@ -177,7 +144,8 @@ if __name__ == "__main__":
     # print(env.state)
     possible_actions = env.get_actions()
     # print(possible_actions[27])
-    state, reward = env.step(possible_actions[27])
+    reward, spectra_ref, spectra1 = env.step(possible_actions[0], verbose=True)
+    print(reward)
     # print(state)
     # print(reward)
     # state, reward = env.step(possible_actions[0])
@@ -190,3 +158,13 @@ if __name__ == "__main__":
     # chem_symbols = ["B"] * num_coordinates
     # spectra = spectra_from_arrays(positions=np.array(coords_atom)*resolution, chemical_symbols=chem_symbols, name=name, writing=False)
     # print(env)
+
+
+
+
+
+
+
+
+
+    
