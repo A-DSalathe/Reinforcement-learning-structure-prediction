@@ -8,6 +8,22 @@ import os
 import os.path as op
 script_dir = op.dirname(op.realpath(__file__))
 
+def generate_3d_coordinates(shape):
+    X, Y, Z = shape
+    
+    # Create ranges for each dimension
+    x = np.arange(X)
+    y = np.arange(Y)
+    z = np.arange(Z)
+    
+    # Generate coordinate grids
+    xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
+    
+    # Flatten the grids and zip them into tuples
+    coordinates = list(zip(xx.ravel(), yy.ravel(), zz.ravel()))
+    
+    return coordinates
+
 def find_distances_to_new_point(array, new_point):
     # Check if the new point is within the array bounds
     if (np.array(new_point) >= np.array(array.shape)).any() or (np.array(new_point) < 0).any():
@@ -25,8 +41,7 @@ def find_distances_to_new_point(array, new_point):
     
     # Find minimum and maximum distances
     min_distance = np.min(distances)
-    max_distance = np.max(distances)
-    return min_distance, max_distance
+    return min_distance
 
 def path_to_refspectra(ref_spectra_path):
         data = np.loadtxt(ref_spectra_path, skiprows=2)
@@ -43,18 +58,16 @@ class Simple_Environment:
         # self.n_state = math.comb(dimensions[0]*dimensions[1]*dimensions[2]-1, n_atoms-1)
         center = (dimensions[0]//2, dimensions[1]//2, dimensions[2]//2)
         self.state[center] = 1
-        zero_indices = np.where(self.state == 0)
-        self.actions  = list(zip(*zero_indices))
+        self.actions  = generate_3d_coordinates(dimensions)
         self.n_actions = len(self.actions)
         self.covalent_radii = 0.4
         self.done = False
         self.chem_symbols = ["B"]
         self.name = "test"
+        self.cumulative_reward = 0
 
     def get_actions(self):
-        zero_indices = np.where(self.state == 0)
-        actions = list(zip(*zero_indices))
-        return actions
+        return self.actions
 
     def reset(self):
         dimensions = self.dimensions
@@ -66,30 +79,40 @@ class Simple_Environment:
         return self.state
 
     def step(self, action):
-
-        if self.state.sum() == self.n_atoms-1:
+        if (self.state.sum() == self.n_atoms-1) and (self.state[action] == 0):
             self.done = True
         reward = self.get_reward(action)
+        self.cumulative_reward += reward
         self.state[action] = 1
         self.actions = self.get_actions()
         self.chem_symbols.append("B")
         
         return self.state, reward
 
-    def get_reward(self,action):
-        min_distance, max_distance = find_distances_to_new_point(self.state, action)
-        print(min_distance, max_distance)
-        if min_distance <= 0.5*self.covalent_radii/self.resolution[0]:
-            reward = -np.inf
-        elif max_distance >= 1.5*self.covalent_radii/self.resolution[0]:
-            reward = -np.inf
-        else:
+    def get_reward(self, action):
+        min_distance = find_distances_to_new_point(self.state, action)
+        reward = self.cumulative_reward
+        
+        # Define the acceptable distance range
+        lower_bound = 0.5 * self.covalent_radii / self.resolution[0]
+        upper_bound = 1.5 * self.covalent_radii / self.resolution[0]
+        
+        # Smooth penalty function
+        if min_distance == 0:
             reward = 0
+        elif min_distance < lower_bound:
+            reward = -np.exp(-100 * (min_distance - lower_bound))  # Smooth penalty for being too close
+        elif min_distance > upper_bound:
+            reward = -np.exp(100 * (min_distance - upper_bound))  # Smooth penalty for being too far
+        else:
+            reward = 0  # Reward close to 0 within the acceptable range
+
         if self.done:
             reward += -self.diff_spectra()
+        
         return reward
     
-    def diff_spectra(self):
+    def diff_spectra(self, verbose=False):
         # Compute the spectra of the current state
         #self.state = spectra_from_arrays()
         ref_spectra_y = self.ref_spectra[:,1]
@@ -98,6 +121,8 @@ class Simple_Environment:
         # Compute the difference between the current state spectra and the reference spectra
         spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False)
         spectra_y = spectra[:,1]
+        if verbose
+            return np.linalg.norm(spectra_y - ref_spectra_y, ord=2), ref_spectra_y, spectra_y
         return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)
     # def encoded_action(self, action):
     #     return np.ravel_multi_index(action, self.state.shape)
@@ -147,13 +172,17 @@ class Simple_Environment:
 
 
 if __name__ == "__main__":
-    
+
     env = Simple_Environment()
+    # print(env.state)
     possible_actions = env.get_actions()
-    # print(possible_actions)
-    state, reward = env.step(possible_actions[0])
-    print(state)
-    print(reward)
+    # print(possible_actions[27])
+    state, reward = env.step(possible_actions[27])
+    # print(state)
+    # print(reward)
+    # state, reward = env.step(possible_actions[0])
+    # print(state)
+    # print(reward)
     # name = 'bob'
     # resolution = np.array([0.1,0.1,0.1])   
     # num_coordinates = 10
