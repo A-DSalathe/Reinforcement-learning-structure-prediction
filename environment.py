@@ -124,14 +124,14 @@ class Simple_Environment:
         ref_spectra_y = self.ref_spectra[:,1]
         atom_pos = np.where(self.state == 1)
         coords_atom = list(zip(*atom_pos))
-        print(coords_atom)
+        print(coords_atom*self.resolution)
         # Compute the difference between the current state spectra and the reference spectra
         spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False)
         spectra_y = spectra[:,1]
         if verbose:
             return np.linalg.norm(spectra_y - ref_spectra_y, ord=2), ref_spectra_y, spectra_y
         else:
-            return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)
+            return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)*10**6
 
     # def encoded_action(self, action):
     #     return np.ravel_multi_index(action, self.state.shape)
@@ -143,12 +143,7 @@ class Simple_Environment:
 
 if __name__ == "__main__":
 
-    # number_of_tests = 10
-    # for i in range(number_of_tests):
-    #     test_coords = np.random.randint(-5, 5, size=(2, 3))
-    #     test_chem_symbols = ["B", "B"]
-    #     test_name = f"test2_{i}"
-    #     spectra = spectra_from_arrays(test_coords, test_chem_symbols, test_name, writing=True)
+    
     dimensions = (11,11,11)
     resolution = np.array([0.2,0.2,0.2])
     env = Simple_Environment(dimensions=dimensions, resolution=resolution)
@@ -159,7 +154,7 @@ if __name__ == "__main__":
     state, reward = env.step((5,5,5))
     print(state)
     print(reward)
-    state, reward = env.step((10,2,10))
+    state, reward = env.step((7,9,5))
     print(state)
     print(reward)
     # state, reward = env.step(possible_actions[0])
