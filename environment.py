@@ -82,17 +82,21 @@ class Simple_Environment:
         if (self.state.sum() == self.n_atoms-1) and (self.state[action] == 0):
             self.done = True
         if verbose:
-            return self.get_reward(action, verbose=True)
-        reward = self.get_reward(action)
-        
-        self.cumulative_reward += reward
+            return self.get_reward_placement(action, verbose=True)
+        # reward = self.get_reward_placement(action)
+        reward = 0
         self.state[action] = 1
-        self.actions = self.get_actions()
         self.chem_symbols.append("B")
+        if self.done and not verbose:
+            reward += -self.diff_spectra()
+        elif self.done and verbose:
+            return self.diff_spectra(verbose=True)
+        self.cumulative_reward += reward
+        
         
         return self.state, reward
 
-    def get_reward(self, action, verbose=False):
+    def get_reward_placement(self, action, verbose=False):
         min_distance = find_distances_to_new_point(self.state, action)
         reward = self.cumulative_reward
         
@@ -110,10 +114,6 @@ class Simple_Environment:
         else:
             reward = 0  # Reward close to 0 within the acceptable range
 
-        if self.done and not verbose:
-            reward += -self.diff_spectra()
-        elif self.done and verbose:
-            return self.diff_spectra(verbose=True)
         return reward
     
     def diff_spectra(self, verbose=False):
@@ -122,6 +122,7 @@ class Simple_Environment:
         ref_spectra_y = self.ref_spectra[:,1]
         atom_pos = np.where(self.state == 1)
         coords_atom = list(zip(*atom_pos))
+        print(coords_atom)
         # Compute the difference between the current state spectra and the reference spectra
         spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False)
         spectra_y = spectra[:,1]
@@ -140,14 +141,22 @@ class Simple_Environment:
 
 if __name__ == "__main__":
 
-    env = Simple_Environment()
+    # number_of_tests = 10
+    # for i in range(number_of_tests):
+    #     test_coords = np.random.randint(-5, 5, size=(2, 3))
+    #     test_chem_symbols = ["B", "B"]
+    #     test_name = f"test2_{i}"
+    #     spectra = spectra_from_arrays(test_coords, test_chem_symbols, test_name, writing=True)
+    dimensions = (11,11,11)
+    resolution = np.array([0.2,0.2,0.2])
+    env = Simple_Environment(dimensions=dimensions, resolution=resolution)
     # print(env.state)
     possible_actions = env.get_actions()
     # print(possible_actions[27])
-    reward, spectra_ref, spectra1 = env.step(possible_actions[0], verbose=True)
+    # reward, spectra_ref, spectra1 = env.step(possible_actions[0], verbose=True)
+    state, reward = env.step((2,3,1))
+    print(state)
     print(reward)
-    # print(state)
-    # print(reward)
     # state, reward = env.step(possible_actions[0])
     # print(state)
     # print(reward)
