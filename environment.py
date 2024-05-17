@@ -60,7 +60,7 @@ class Simple_Environment:
         self.state[center] = 1
         self.actions  = generate_3d_coordinates(dimensions)
         self.n_actions = len(self.actions)
-        self.covalent_radii = 0.4
+        self.covalent_radii = 0.9
         self.done = False
         self.chem_symbols = ["B"]
         self.name = "test"
@@ -79,14 +79,16 @@ class Simple_Environment:
         return self.state
 
     def step(self, action, verbose=False):
-        if (self.state.sum() == self.n_atoms-1) and (self.state[action] == 0):
+        place_atom = (self.state[action] == 0)
+        if (self.state.sum() == self.n_atoms-1) and place_atom:
             self.done = True
         if verbose:
             return self.get_reward_placement(action, verbose=True)
-        # reward = self.get_reward_placement(action)
-        reward = 0
-        self.state[action] = 1
-        self.chem_symbols.append("B")
+        reward = self.get_reward_placement(action)
+        # reward = 0
+        if place_atom:
+            self.state[action] = 1
+            self.chem_symbols.append("B")
         if self.done and not verbose:
             reward += -self.diff_spectra()
         elif self.done and verbose:
@@ -108,9 +110,9 @@ class Simple_Environment:
         if min_distance == 0:
             reward = 0
         elif min_distance < lower_bound:
-            reward = -np.exp(-100 * (min_distance - lower_bound))  # Smooth penalty for being too close
+            reward = -np.exp(-10 * (min_distance - lower_bound))  # Smooth penalty for being too close
         elif min_distance > upper_bound:
-            reward = -np.exp(100 * (min_distance - upper_bound))  # Smooth penalty for being too far
+            reward = -np.exp(10 * (min_distance - upper_bound))  # Smooth penalty for being too far
         else:
             reward = 0  # Reward close to 0 within the acceptable range
 
@@ -154,7 +156,10 @@ if __name__ == "__main__":
     possible_actions = env.get_actions()
     # print(possible_actions[27])
     # reward, spectra_ref, spectra1 = env.step(possible_actions[0], verbose=True)
-    state, reward = env.step((2,3,1))
+    state, reward = env.step((5,5,5))
+    print(state)
+    print(reward)
+    state, reward = env.step((10,2,10))
     print(state)
     print(reward)
     # state, reward = env.step(possible_actions[0])
