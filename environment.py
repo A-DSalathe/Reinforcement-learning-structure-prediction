@@ -82,21 +82,22 @@ class Molecule_Environment:
         return self.state
 
     def step(self, action, verbose=False):
-        place_atom = (self.state[action] == 0)
-        if (self.state.sum() == self.n_atoms-1) and place_atom:
-            self.done = True
-        if verbose:
-            return self.get_reward_placement(action, verbose=True)
-        reward = self.get_reward_placement(action)
-        # reward = 0
-        if place_atom:
-            self.state[action] = 1
-            self.chem_symbols.append("B")
-        if self.done and not verbose:
-            reward += -self.diff_spectra()
-        elif self.done and verbose:
-            return self.diff_spectra(verbose=True)
-        self.cumulative_reward += reward
+        if not self.done:
+            place_atom = (self.state[action] == 0)
+            if (self.state.sum() == self.n_atoms-1) and place_atom:
+                self.done = True
+            if verbose:
+                return self.get_reward_placement(action, verbose=True)
+            reward = self.get_reward_placement(action)
+            # reward = 0
+            if place_atom:
+                self.state[action] = 1
+                self.chem_symbols.append("B")
+            if self.done and not verbose:
+                reward += -self.diff_spectra()
+            elif self.done and verbose:
+                return self.diff_spectra(verbose=True)
+            self.cumulative_reward += reward
         
         
         return self.state, reward, self.done
@@ -138,11 +139,15 @@ class Molecule_Environment:
     def sample_action(self):
         actions = self.actions
         return actions[np.random.randint(0, len(actions))]
-    # def encoded_action(self, action):
-    #     return np.ravel_multi_index(action, self.state.shape)
-
+    
     def render(self):
         print(self.state)
+    
+    def index_action(self, action):
+        return self.actions.index(action)
+    
+    def action_index(self, index):
+        return self.actions[index]
 
 
 
@@ -150,20 +155,23 @@ if __name__ == "__main__":
 
     dimensions = (11,11,11)
     resolution = np.array([0.2,0.2,0.2])
-    env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
+    # env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
+    env = Molecule_Environment()
     print(env)
+    state_flatten = env.state.flatten()
+    print(state_flatten)
     # print(env.state)
-    possible_actions = env.get_actions()
-    state, reward, done = env.step((5,5,5))
-    print(state)
-    print(reward)
-    print(done)
-    # state, reward, done = env.step((7,9,5))
-    action = env.sample_action()
-    state, reward, done = env.step(action)
-    print(state)
-    print(reward)
-    print(done)
+    # possible_actions = env.get_actions()
+    # state, reward, done = env.step((5,5,5))
+    # print(state)
+    # print(reward)
+    # print(done)
+    # # state, reward, done = env.step((7,9,5))
+    # action = env.sample_action()
+    # state, reward, done = env.step(action)
+    # print(state)
+    # print(reward)
+    # print(done)
 
 
 
