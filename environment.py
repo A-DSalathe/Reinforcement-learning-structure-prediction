@@ -1,12 +1,10 @@
 import numpy as np
 import math
 from spectra import spectra_from_arrays
-from spectra import test
-from ase.vibrations import Infrared
-from ase import Atoms
 import os
 import os.path as op
 script_dir = op.dirname(op.realpath(__file__))
+
 
 def generate_3d_coordinates(shape):
     X, Y, Z = shape
@@ -66,6 +64,7 @@ class Molecule_Environment:
         self.chem_symbols = ["B"]
         self.name = "test"
         self.cumulative_reward = 0
+        self.spectra = None
 
     def __str__(self) -> str:
         return f"Molecule Environment(with {self.n_atoms} atoms, in the workspace going from {[0,0,0]} to {self.dimensions/self.resolution}, with resolution={self.resolution})"
@@ -78,33 +77,29 @@ class Molecule_Environment:
         self.state = np.zeros(dimensions)
         self.done = False
         self.state[dimensions[0]//2, dimensions[1]//2, dimensions[2]//2] = 1
-        self.actions  = self.get_actions()
         self.chem_symbols = ["B"]
+        self.cumulative_reward = 0
         return self.state
 
-    def step(self, action, verbose=False):
+    def step(self, action):
         if not self.done:
             place_atom = (self.state[action] == 0)
             if (self.state.sum() == self.n_atoms-1) and place_atom:
                 self.done = True
-            if verbose:
-                return self.get_reward_placement(action, verbose=True)
             reward = self.get_reward_placement(action)
             # reward = 0
             if place_atom:
                 self.state[action] = 1
                 self.chem_symbols.append("B")
-            if self.done and not verbose:
+            if self.done and (self.cumulative_reward > -0.001):
                 reward += -self.diff_spectra()
-            elif self.done and verbose:
-                return self.diff_spectra(verbose=True)
             self.cumulative_reward += reward
         else:
             reward = self.cumulative_reward
         
         return self.state, reward, self.done
 
-    def get_reward_placement(self, action, verbose=False):
+    def get_reward_placement(self, action):
         min_distance = find_distances_to_new_point(self.state, action)
         reward = self.cumulative_reward
         
@@ -124,7 +119,7 @@ class Molecule_Environment:
 
         return reward
     
-    def diff_spectra(self, verbose=False):
+    def diff_spectra(self):
         # Compute the spectra of the current state
         #self.state = spectra_from_arrays()
         ref_spectra_y = self.ref_spectra[:,1]
@@ -134,11 +129,9 @@ class Molecule_Environment:
         # print(coords_atom*self.resolution)
         # Compute the difference between the current state spectra and the reference spectra
         spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False, verbosity=self.print_spectra)
+        self.spectra = spectra
         spectra_y = spectra[:,1]
-        if verbose:
-            return np.linalg.norm(spectra_y - ref_spectra_y, ord=2), ref_spectra_y, spectra_y
-        else:
-            return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)*10**6
+        return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)*10**6
     def sample_action(self):
         actions = self.actions
         return actions[np.random.randint(0, len(actions))]
@@ -151,7 +144,8 @@ class Molecule_Environment:
     
     def action_index(self, index):
         return self.actions[index]
-
+    def get_spectra(self):
+        return self.spectra
 
 
 if __name__ == "__main__":
