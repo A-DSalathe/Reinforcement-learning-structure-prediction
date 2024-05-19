@@ -89,13 +89,17 @@ class Molecule_Environment:
                 self.done = True
             if verbose:
                 return self.get_reward_placement(action, verbose=True)
+            print("before reward")
             reward = self.get_reward_placement(action)
+            print("after reward")
             # reward = 0
             if place_atom:
                 self.state[action] = 1
                 self.chem_symbols.append("B")
             if self.done and not verbose:
-                reward += -self.diff_spectra()
+                print("before spectra")
+                reward -= self.diff_spectra()
+                print("after spectra")
             elif self.done and verbose:
                 return self.diff_spectra(verbose=True)
             self.cumulative_reward += reward
@@ -165,7 +169,8 @@ if __name__ == "__main__":
     print(state_flatten)
     # print(env.state)
     possible_actions = env.get_actions()
-    state, reward, done = env.step((2,2,2))
+    env.reset()
+    state, reward, done = env.step((3, 2, 1))
     print(state)
     print(reward)
     print(done)

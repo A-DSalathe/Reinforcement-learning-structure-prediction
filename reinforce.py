@@ -1,3 +1,4 @@
+from environment import Molecule_Environment
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,7 +7,11 @@ from torch.distributions import Categorical
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
-from environment import Molecule_Environment
+from spectra import spectra_from_arrays
+import os
+import os.path as op
+script_dir = op.dirname(op.realpath(__file__))
+
 
 # Assuming Molecule_Environment is defined as provided and properly imported
 env = Molecule_Environment()
@@ -48,7 +53,7 @@ def discount_rewards(rewards, gamma=0.99):
         discounted.insert(0, cumulative)
     return discounted
 
-def reinforce(policy, optimizer, n_episodes=1000, max_t=2, gamma=1.0, print_every=100):
+def reinforce(policy, optimizer, n_episodes=10, max_t=2, gamma=1.0, print_every=100):
     scores_deque = deque(maxlen=100)
     scores = []
     for e in range(1, n_episodes + 1):
@@ -64,6 +69,7 @@ def reinforce(policy, optimizer, n_episodes=1000, max_t=2, gamma=1.0, print_ever
             print("before step")
             print("action :", action)
             next_state, reward, done = env.step(action)
+            print(done)
             print("after step")
             rewards.append(reward)
             state = next_state
@@ -91,7 +97,7 @@ def reinforce(policy, optimizer, n_episodes=1000, max_t=2, gamma=1.0, print_ever
 
     return scores
 
-env.print_spectra = True
+#env.print_spectra = True
 scores = reinforce(policy, optimizer)
 print("after reinforce")
 
