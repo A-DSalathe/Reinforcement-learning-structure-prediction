@@ -9,6 +9,7 @@ from matplotlib.axes import Axes
 from ase import Atoms
 from ase.vibrations import Infrared
 from collections.abc import Callable, Sequence
+import os
 
 # We will use tblite as a semiempirical code to model spectra
 from tblite.ase import TBLite as XTB3
@@ -57,7 +58,18 @@ def spectra_from_arrays(
         # Close the figure to free up memory
         plt.close(fig)
     # Might need to adapt this depending on os, but it helps
-    shutil.rmtree("ir", ignore_errors=True)
+    dir_path = "ir"  # Change this to an absolute path if needed, e.g., r"C:\path\to\ir"
+
+    # Check if the directory exists
+    if os.path.exists(dir_path):
+        print(f"Directory {dir_path} exists, attempting to remove it.")
+        try:
+            shutil.rmtree(dir_path, ignore_errors=True)
+            print(f"Directory {dir_path} removed successfully.")
+        except Exception as e:
+            print(f"An error occurred while trying to remove the directory: {e}")
+    else:
+        print(f"Directory {dir_path} does not exist.")
     # print('freq',ir.get_frequencies())
     # print('energy',ir.intensities)
     spectrum_array = np.array([energy_range, spectrum]).T
