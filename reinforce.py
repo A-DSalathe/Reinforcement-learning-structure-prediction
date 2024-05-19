@@ -52,16 +52,19 @@ def reinforce(policy, optimizer, n_episodes=1000, max_t=2, gamma=1.0, print_ever
     scores_deque = deque(maxlen=100)
     scores = []
     for e in range(1, n_episodes + 1):
+        print("starting episode: ",e)
         saved_log_probs = []
         rewards = []
         state = env.reset()
         flattened_state = get_flattened_state(state)
-
         for t in range(max_t):
             action_idx, log_prob = policy.act(flattened_state)
             saved_log_probs.append(log_prob)
             action = env.actions[action_idx]  # Convert action index to coordinates
+            print("before step")
+            print("action :", action)
             next_state, reward, done = env.step(action)
+            print("after step")
             rewards.append(reward)
             state = next_state
             flattened_state = get_flattened_state(state)
@@ -88,7 +91,9 @@ def reinforce(policy, optimizer, n_episodes=1000, max_t=2, gamma=1.0, print_ever
 
     return scores
 
+env.print_spectra = True
 scores = reinforce(policy, optimizer)
+print("after reinforce")
 
 # Use the trained policy to generate the molecule
 state = env.reset()
