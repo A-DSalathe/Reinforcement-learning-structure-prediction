@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from spectra import spectra_from_arrays
 import os
 import os.path as op
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 script_dir = op.dirname(op.realpath(__file__))
 
 
@@ -53,11 +55,10 @@ def discount_rewards(rewards, gamma=0.99):
         discounted.insert(0, cumulative)
     return discounted
 
-def reinforce(policy, optimizer, n_episodes=10, max_t=2, gamma=1.0, print_every=100):
+def reinforce(policy, optimizer, n_episodes=30, max_t=10, gamma=1.0, print_every=2):
     scores_deque = deque(maxlen=100)
     scores = []
     for e in range(1, n_episodes + 1):
-        print("starting episode: ",e)
         saved_log_probs = []
         rewards = []
         state = env.reset()
@@ -66,11 +67,8 @@ def reinforce(policy, optimizer, n_episodes=10, max_t=2, gamma=1.0, print_every=
             action_idx, log_prob = policy.act(flattened_state)
             saved_log_probs.append(log_prob)
             action = env.actions[action_idx]  # Convert action index to coordinates
-            print("before step")
-            print("action :", action)
             next_state, reward, done = env.step(action)
-            print(done)
-            print("after step")
+
             rewards.append(reward)
             state = next_state
             flattened_state = get_flattened_state(state)
@@ -97,9 +95,7 @@ def reinforce(policy, optimizer, n_episodes=10, max_t=2, gamma=1.0, print_every=
 
     return scores
 
-#env.print_spectra = True
 scores = reinforce(policy, optimizer)
-print("after reinforce")
 
 # Use the trained policy to generate the molecule
 state = env.reset()
@@ -116,8 +112,23 @@ while not done:
 ref_spectra_y = env.ref_spectra[:, 1]
 atom_pos = np.where(env.state == 1)
 coords_atom = list(zip(*atom_pos))
-spectra = spectra_from_arrays(positions=np.array(coords_atom) * env.resolution, chemical_symbols=env.chem_symbols, name=env.name, writing=False)
+positions = np.array(coords_atom) * env.resolution
+spectra = spectra_from_arrays(positions = positions, chemical_symbols=env.chem_symbols, name=env.name, writing=False)
+print(positions)
 spectra_y = spectra[:, 1]
+np.where(env.state == 1)
+
+#################################################
+#test function
+point1 = [-0.475,      -0.475,      0.0]
+point2 = [0.475,      0.475,      0.0]
+def calculate_distance(point1, point2):
+    distance = np.linalg.norm(np.array(point2) - np.array(point1))
+    return distance
+print(calculate_distance(point1,point2))
+print(calculate_distance(positions[0],positions[1]))
+
+##################
 
 plt.figure(figsize=(10, 5))
 plt.plot(env.ref_spectra[:, 0], ref_spectra_y, label='Reference Spectrum')
@@ -126,3 +137,49 @@ plt.xlabel('Wavenumber (cm^-1)')
 plt.ylabel('Intensity')
 plt.legend()
 plt.show()
+
+############################
+#3d ploting
+def plot_sphere(ax, center, radius, color='r'):
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x = center[0] + radius * np.outer(np.cos(u), np.sin(v))
+    y = center[1] + radius * np.outer(np.sin(u), np.sin(v))
+    z = center[2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
+    ax.plot_surface(x, y, z, color=color, alpha=0.6)
+    
+def plot_3d_structure(positions, resolution, grid_dimensions):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+
+    for pos in positions:
+        plot_sphere(ax, pos, radius=0.1)
+
+    # Set labels
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    ax.set_xlim([0, grid_dimensions[0] * resolution[0]])
+    ax.set_ylim([0, grid_dimensions[1] * resolution[1]])
+    ax.set_zlim([0, grid_dimensions[2] * resolution[2]])
+
+    ax.set_box_aspect([grid_dimensions[0] * resolution[0],
+                       grid_dimensions[1] * resolution[1],
+                       grid_dimensions[2] * resolution[2]])
+
+    plt.legend()
+    plt.show()
+
+resolution = env.resolution
+grid_dimensions = env.dimensions
+
+plot_3d_structure(positions, resolution, grid_dimensions)
+
+##################
+
+#need to implement:
+#visualisation of the convergence (measure of accuracy at each epoch)
+#is the action not selected at random here? use an optimal exploration strategy
+#3d representation

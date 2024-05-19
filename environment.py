@@ -48,7 +48,7 @@ def path_to_refspectra(ref_spectra_path):
         return data
 
 class Molecule_Environment:
-    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (5,5,5), resolution=np.array([0.4,0.4,0.4]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0):
+    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (7,7,7), resolution=np.array([0.3,0.3,0.3]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
@@ -77,7 +77,8 @@ class Molecule_Environment:
         dimensions = self.dimensions
         self.state = np.zeros(dimensions)
         self.done = False
-        self.state[dimensions[0]//2, dimensions[1]//2, dimensions[2]//2] = 1
+        center = (dimensions[0] // 2, dimensions[1] // 2, dimensions[2] // 2)
+        self.state[center] = 1
         self.actions  = self.get_actions()
         self.chem_symbols = ["B"]
         return self.state
@@ -89,17 +90,15 @@ class Molecule_Environment:
                 self.done = True
             if verbose:
                 return self.get_reward_placement(action, verbose=True)
-            print("before reward")
+
             reward = self.get_reward_placement(action)
-            print("after reward")
             # reward = 0
+
             if place_atom:
                 self.state[action] = 1
                 self.chem_symbols.append("B")
             if self.done and not verbose:
-                print("before spectra")
                 reward -= self.diff_spectra()
-                print("after spectra")
             elif self.done and verbose:
                 return self.diff_spectra(verbose=True)
             self.cumulative_reward += reward
