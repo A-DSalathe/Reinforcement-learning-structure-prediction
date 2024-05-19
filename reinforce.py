@@ -16,7 +16,7 @@ from mpl_toolkits.mplot3d import Axes3D
 script_dir = op.dirname(op.realpath(__file__))
 
 # Assuming Molecule_Environment is defined as provided and properly imported
-env = Molecule_Environment()
+env = Molecule_Environment(n_atoms = 2, chemical_symbols = ["B"], dimensions = (21,21,21), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0)
 
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -68,7 +68,25 @@ def discount_rewards(rewards, gamma=0.99):
     return discounted
 
 
-def reinforce(policy, optimizer, n_episodes=30, max_t=10, gamma=0.9, print_every=2, epsilon_start=1.0, epsilon_end=0.1,
+def plot_scores(scores):
+    # Convert scores to a numpy array for easier manipulation
+    scores_array = np.array(scores)
+
+    # Identify and filter out extreme values
+    filtered_scores = np.clip(scores_array, a_min=-10, a_max=1)
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(filtered_scores, label='Score per Episode')
+    plt.ylim(
+        [np.min(filtered_scores) - 1, np.max(filtered_scores) + 1])  # Adjust y-axis limits for better visualization
+    plt.xlabel('Episode')
+    plt.ylabel('Score')
+    plt.title('Evolution of the Score over Episodes')
+    plt.legend()
+    plt.show()
+
+
+def reinforce(policy, optimizer, n_episodes=100, max_t=10, gamma=1.0, print_every=2, epsilon_start=1.0, epsilon_end=0.1,
               epsilon_decay=0.995):
     scores_deque = deque(maxlen=100)
     scores = []
@@ -84,7 +102,7 @@ def reinforce(policy, optimizer, n_episodes=30, max_t=10, gamma=0.9, print_every
             saved_log_probs.append(log_prob)
             action = env.actions[action_idx]  # Convert action index to coordinates
             next_state, reward, done = env.step(action)
-
+            #might be adding two times the reward
             rewards.append(reward)
             state = next_state
             flattened_state = get_flattened_state(state)
@@ -114,9 +132,12 @@ def reinforce(policy, optimizer, n_episodes=30, max_t=10, gamma=0.9, print_every
         epsilon = max(epsilon_end, epsilon_decay * epsilon)  # Decay epsilon
 
         if e % print_every == 0:
-            print(f'Episode {e}\tAverage Score: {np.mean(scores_deque):.2f}')
+            print(f'Episode {e}\t Score: {sum(rewards):.2f}')
 
+    plot_scores(scores)  # Plot the scores at the end of training
+    print(scores)
     return scores
+
 
 scores = reinforce(policy, optimizer)
 
@@ -197,7 +218,6 @@ def plot_3d_structure(positions, resolution, grid_dimensions):
                        grid_dimensions[1] * resolution[1],
                        grid_dimensions[2] * resolution[2]])
 
-    plt.legend()
     plt.show()
 
 
@@ -205,3 +225,5 @@ resolution = env.resolution
 grid_dimensions = env.dimensions
 
 plot_3d_structure(positions, resolution, grid_dimensions)
+
+#there is clearly a big problem with the scores as it seems it doesn't go down
