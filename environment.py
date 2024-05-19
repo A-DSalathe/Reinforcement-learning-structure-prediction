@@ -47,7 +47,7 @@ def path_to_refspectra(ref_spectra_path):
         data = np.loadtxt(ref_spectra_path, skiprows=2)
         return data
 
-class Simple_Environment:
+class Molecule_Environment:
     def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (5,5,5), resolution=np.array([0.4,0.4,0.4]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat'))):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
@@ -65,6 +65,9 @@ class Simple_Environment:
         self.chem_symbols = ["B"]
         self.name = "test"
         self.cumulative_reward = 0
+
+    def __str__(self) -> str:
+        return f"Molecule Environment(with {self.n_atoms} atoms, in the workspace going from {[0,0,0]} to {self.dimensions/self.resolution}, with resolution={self.resolution})"
 
     def get_actions(self):
         return self.actions
@@ -96,7 +99,7 @@ class Simple_Environment:
         self.cumulative_reward += reward
         
         
-        return self.state, reward
+        return self.state, reward, self.done
 
     def get_reward_placement(self, action, verbose=False):
         min_distance = find_distances_to_new_point(self.state, action)
@@ -132,7 +135,9 @@ class Simple_Environment:
             return np.linalg.norm(spectra_y - ref_spectra_y, ord=2), ref_spectra_y, spectra_y
         else:
             return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)*10**6
-
+    def sample_action(self):
+        actions = self.actions
+        return actions[np.random.randint(0, len(actions))]
     # def encoded_action(self, action):
     #     return np.ravel_multi_index(action, self.state.shape)
 
@@ -143,31 +148,22 @@ class Simple_Environment:
 
 if __name__ == "__main__":
 
-    
     dimensions = (11,11,11)
     resolution = np.array([0.2,0.2,0.2])
-    env = Simple_Environment(dimensions=dimensions, resolution=resolution)
+    env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
+    print(env)
     # print(env.state)
     possible_actions = env.get_actions()
-    # print(possible_actions[27])
-    # reward, spectra_ref, spectra1 = env.step(possible_actions[0], verbose=True)
-    state, reward = env.step((5,5,5))
+    state, reward, done = env.step((5,5,5))
     print(state)
     print(reward)
-    state, reward = env.step((7,9,5))
+    print(done)
+    # state, reward, done = env.step((7,9,5))
+    action = env.sample_action()
+    state, reward, done = env.step(action)
     print(state)
     print(reward)
-    # state, reward = env.step(possible_actions[0])
-    # print(state)
-    # print(reward)
-    # name = 'bob'
-    # resolution = np.array([0.1,0.1,0.1])   
-    # num_coordinates = 10
-    # coords_atom = np.random.randint(0, 10, size=(num_coordinates, 3))
-    # chem_symbols = ["B"] * num_coordinates
-    # spectra = spectra_from_arrays(positions=np.array(coords_atom)*resolution, chemical_symbols=chem_symbols, name=name, writing=False)
-    # print(env)
-
+    print(done)
 
 
 
