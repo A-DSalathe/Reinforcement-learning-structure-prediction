@@ -100,8 +100,7 @@ class Molecule_Environment:
                 return self.diff_spectra(verbose=True)
             self.cumulative_reward += reward
         else:
-            reward = 0
-        
+            reward = self.cumulative_reward
         
         return self.state, reward, self.done
 
@@ -132,6 +131,7 @@ class Molecule_Environment:
         atom_pos = np.where(self.state == 1)
         coords_atom = list(zip(*atom_pos))
         #print(coords_atom*self.resolution)
+        # print(coords_atom*self.resolution)
         # Compute the difference between the current state spectra and the reference spectra
         spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False, verbosity=self.print_spectra)
         spectra_y = spectra[:,1]
@@ -172,6 +172,8 @@ if __name__ == "__main__":
     env.print_spectra = 1
     # state, reward, done = env.step((7,9,5))
     action = env.sample_action()
+    print(action)
+
     state, reward, done = env.step(action)
     print(state)
     print(reward)
