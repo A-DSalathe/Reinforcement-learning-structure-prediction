@@ -48,13 +48,14 @@ def path_to_refspectra(ref_spectra_path):
         return data
 
 class Molecule_Environment:
-    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (5,5,5), resolution=np.array([0.4,0.4,0.4]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat'))):
+    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (5,5,5), resolution=np.array([0.4,0.4,0.4]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
         self.resolution = resolution
         self.state = np.zeros(dimensions)
         self.ref_spectra = path_to_refspectra(ref_spectra_path)
+        self.print_spectra = print_spectra
         # self.n_state = math.comb(dimensions[0]*dimensions[1]*dimensions[2]-1, n_atoms-1)
         center = (dimensions[0]//2, dimensions[1]//2, dimensions[2]//2)
         self.state[center] = 1
@@ -130,7 +131,7 @@ class Molecule_Environment:
         coords_atom = list(zip(*atom_pos))
         print(coords_atom*self.resolution)
         # Compute the difference between the current state spectra and the reference spectra
-        spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False)
+        spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False, verbosity=self.print_spectra)
         spectra_y = spectra[:,1]
         if verbose:
             return np.linalg.norm(spectra_y - ref_spectra_y, ord=2), ref_spectra_y, spectra_y
@@ -161,17 +162,18 @@ if __name__ == "__main__":
     state_flatten = env.state.flatten()
     print(state_flatten)
     # print(env.state)
-    # possible_actions = env.get_actions()
-    # state, reward, done = env.step((5,5,5))
-    # print(state)
-    # print(reward)
-    # print(done)
-    # # state, reward, done = env.step((7,9,5))
-    # action = env.sample_action()
-    # state, reward, done = env.step(action)
-    # print(state)
-    # print(reward)
-    # print(done)
+    possible_actions = env.get_actions()
+    state, reward, done = env.step((2,2,2))
+    print(state)
+    print(reward)
+    print(done)
+    env.print_spectra = 1
+    # state, reward, done = env.step((7,9,5))
+    action = env.sample_action()
+    state, reward, done = env.step(action)
+    print(state)
+    print(reward)
+    print(done)
 
 
 
