@@ -103,13 +103,13 @@ class Molecule_Environment:
             reward = np.clip(reward, a_min=self.min_reward,a_max=1)
             self.cumulative_reward += reward
         else:
-            reward = self.cumulative_reward
+            reward = 0
         
         return self.state, reward, self.done
 
     def get_reward_placement(self, action):
         min_distance = find_distances_to_new_point(self.state, action)
-        reward = self.cumulative_reward
+        reward = 0
         
         # Define the acceptable distance range
         lower_bound = 0.5 * self.covalent_radii / self.resolution[0]
