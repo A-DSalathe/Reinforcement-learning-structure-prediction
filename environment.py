@@ -39,7 +39,7 @@ def find_distances_to_new_point(array, new_point):
 
     distances = np.sqrt(np.sum((existing_points - new_point_array) ** 2, axis=1))
     
-    # Find minimum and maximum distances
+    # Find minimum distances
     min_distance = np.min(distances)
     return min_distance
 
@@ -81,6 +81,7 @@ class Molecule_Environment:
         self.state[center] = 1
         self.actions  = self.get_actions()
         self.chem_symbols = ["B"]
+        self.cumulative_reward = 0
         return self.state
 
     def step(self, action):
@@ -154,32 +155,30 @@ class Molecule_Environment:
 
 if __name__ == "__main__":
 
-    dimensions = (11,11,11)
-    resolution = np.array([0.2,0.2,0.2])
-    # env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
-    env = Molecule_Environment()
-    print(env)
-    state_flatten = env.state.flatten()
-    print(state_flatten)
-    # print(env.state)
-    possible_actions = env.get_actions()
-    env.reset()
-    state, reward, done = env.step((3, 2, 1))
-    print(state)
-    print(reward)
-    print(done)
-    env.print_spectra = 1
-    # state, reward, done = env.step((7,9,5))
-    action = env.sample_action()
-    print(action)
+    # dimensions = (11,11,11)
+    # resolution = np.array([0.2,0.2,0.2])
+    # # env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
+    # env = Molecule_Environment()
+    # print(env)
+    # state_flatten = env.state.flatten()
+    # print(state_flatten)
+    # # print(env.state)
+    # possible_actions = env.get_actions()
+    # env.reset()
+    # state, reward, done = env.step((3, 2, 1))
+    # print(state)
+    # print(reward)
+    # print(done)
+    # env.print_spectra = 1
+    # # state, reward, done = env.step((7,9,5))
+    # action = env.sample_action()
+    # print(action)
 
-    state, reward, done = env.step(action)
-    print(state)
-    print(reward)
-    print(done)
-
-
-
+    # state, reward, done = env.step(action)
+    # print(state)
+    # print(reward)
+    # print(done)
+    print(math.comb(343, 1))
 
 
 

@@ -74,7 +74,6 @@ def spectra_from_arrays(
     # print('freq',ir.get_frequencies())
     # print('energy',ir.intensities)
     spectrum_array = np.array([energy_range, spectrum]).T
-    print('ciaociao')
     return spectrum_array
 
 

@@ -12,11 +12,14 @@ import os
 import os.path as op
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import shutil
+import math
 
 script_dir = op.dirname(op.realpath(__file__))
 
 # Assuming Molecule_Environment is defined as provided and properly imported
-env = Molecule_Environment(n_atoms = 2, chemical_symbols = ["B"], dimensions = (21,21,21), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0)
+number_of_atoms = 2
+env = Molecule_Environment(n_atoms = number_of_atoms, chemical_symbols = ["B"], dimensions = (21,21,21), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0)
 
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -48,8 +51,8 @@ class Policy(nn.Module):
 
         return action, log_prob
 
-
-state_size = np.prod(env.dimensions)  # Flattened state size
+flatten_dimensions = np.prod(env.dimensions)
+state_size = math.comb(flatten_dimensions, number_of_atoms-1)  # Flattened state size
 action_size = len(env.actions)
 policy = Policy(state_size, action_size).to(device)
 optimizer = optim.Adam(policy.parameters(), lr=0.01)
@@ -138,8 +141,17 @@ def reinforce(policy, optimizer, n_episodes=100, max_t=10, gamma=1.0, print_ever
     print(scores)
     return scores
 
-
-scores = reinforce(policy, optimizer)
+dir_path = "ir"  # Change this to an absolute path if needed, e.g., r"C:\path\to\ir"
+if os.path.exists(dir_path):
+    print(f"Directory {dir_path} exists, attempting to remove it.")
+    try:
+        shutil.rmtree(dir_path, ignore_errors=True)
+        print(f"Directory {dir_path} removed successfully.")
+    except Exception as e:
+        print(f"An error occurred while trying to remove the directory: {e}")
+else:
+    print(f"Directory {dir_path} does not exist.")
+scores = reinforce(policy, optimizer, n_episodes=100)
 
 # Use the trained policy to generate the molecule
 state = env.reset()
@@ -161,7 +173,7 @@ spectra = spectra_from_arrays(positions=positions, chemical_symbols=env.chem_sym
 print(positions)
 spectra_y = spectra[:, 1]
 np.where(env.state == 1)
-
+print(policy)
 #################################################
 # test function
 point1 = [-0.475, -0.475, 0.0]
@@ -223,7 +235,10 @@ def plot_3d_structure(positions, resolution, grid_dimensions):
 
 resolution = env.resolution
 grid_dimensions = env.dimensions
-
+print(grid_dimensions)
 plot_3d_structure(positions, resolution, grid_dimensions)
 
+flattened_state_test = get_flattened_state(env.reset())
+action, log_prob = policy.act(flattened_state_test)
+print(log_prob)
 #there is clearly a big problem with the scores as it seems it doesn't go down
