@@ -52,7 +52,7 @@ class Policy(nn.Module):
         return action, log_prob
 
 flatten_dimensions = np.prod(env.dimensions)
-state_size = math.comb(flatten_dimensions, number_of_atoms-1)  # Flattened state size
+state_size = flatten_dimensions  # Flattened state size
 action_size = len(env.actions)
 policy = Policy(state_size, action_size).to(device)
 optimizer = optim.Adam(policy.parameters(), lr=0.01)
@@ -105,15 +105,14 @@ def reinforce(policy, optimizer, n_episodes=100, max_t=10, gamma=1.0, print_ever
             saved_log_probs.append(log_prob)
             action = env.actions[action_idx]  # Convert action index to coordinates
             next_state, reward, done = env.step(action)
-            #might be adding two times the reward
             rewards.append(reward)
             state = next_state
             flattened_state = get_flattened_state(state)
             if done:
                 break
 
-        scores_deque.append(sum(rewards))
-        scores.append(sum(rewards))
+        scores_deque.append(rewards[-1])
+        scores.append(rewards[-1])
 
         discounts = [gamma ** i for i in range(len(rewards) + 1)]
         rewards_to_go = [sum([discounts[j] * rewards[j + t] for j in range(len(rewards) - t)]) for t in
@@ -242,3 +241,14 @@ flattened_state_test = get_flattened_state(env.reset())
 action, log_prob = policy.act(flattened_state_test)
 print(log_prob)
 #there is clearly a big problem with the scores as it seems it doesn't go down
+
+####
+positions = [[-1.90000000,       0.00000000,       0.00000000]
+[0.00000000,      -1.90000000,       0.00000000]
+[0.00000000,       0.00000000,      -1.90000000]
+[0.00000000,       0.00000000,       0.00000000]
+[0.00000000,       0.00000000,       1.90000000]
+[0.00000000,       1.90000000,       0.00000000]
+[1.90000000,       0.00000000,       0.00000000]]
+
+plot_3d_structure(positions, resolution, grid_dimensions)
