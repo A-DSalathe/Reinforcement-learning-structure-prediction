@@ -99,6 +99,7 @@ class Molecule_Environment:
 
             if self.done:
                 reward -= self.diff_spectra()
+            reward = np.clip(reward, a_min=-10,a_max=1)
             self.cumulative_reward += reward
         else:
             reward = self.cumulative_reward
@@ -155,30 +156,29 @@ class Molecule_Environment:
 
 if __name__ == "__main__":
 
-    # dimensions = (11,11,11)
-    # resolution = np.array([0.2,0.2,0.2])
-    # # env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
+    dimensions = (21,21,21)
+    resolution = np.array([0.2,0.2,0.2])
+    env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
     # env = Molecule_Environment()
-    # print(env)
-    # state_flatten = env.state.flatten()
-    # print(state_flatten)
-    # # print(env.state)
-    # possible_actions = env.get_actions()
-    # env.reset()
+    print(env)
+    state_flatten = env.state.flatten()
+    print(state_flatten)
+    # print(env.state)
+    possible_actions = env.get_actions()
+    env.reset()
     # state, reward, done = env.step((3, 2, 1))
     # print(state)
     # print(reward)
     # print(done)
-    # env.print_spectra = 1
-    # # state, reward, done = env.step((7,9,5))
-    # action = env.sample_action()
-    # print(action)
+    env.print_spectra = 1
+    # state, reward, done = env.step((7,9,5))
+    action = env.sample_action()
+    print(action)
 
-    # state, reward, done = env.step(action)
-    # print(state)
-    # print(reward)
-    # print(done)
-    print(math.comb(343, 1))
+    state, reward, done = env.step(action)
+    print(state)
+    print(reward)
+    print(done)
 
 
 
