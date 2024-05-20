@@ -48,7 +48,7 @@ def path_to_refspectra(ref_spectra_path):
         return data
 
 class Molecule_Environment:
-    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (7,7,7), resolution=np.array([0.3,0.3,0.3]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0):
+    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (7,7,7), resolution=np.array([0.3,0.3,0.3]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0, min_reward=-10):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
@@ -66,6 +66,7 @@ class Molecule_Environment:
         self.name = "test"
         self.cumulative_reward = 0
         self.spectra = None
+        self.min_reward = min_reward
 
     def __str__(self) -> str:
         return f"Molecule Environment(with {self.n_atoms} atoms, in the workspace going from {[0,0,0]} to {self.dimensions/self.resolution}, with resolution={self.resolution})"
@@ -99,7 +100,7 @@ class Molecule_Environment:
 
             if self.done:
                 reward -= self.diff_spectra()
-            reward = np.clip(reward, a_min=-10,a_max=1)
+            reward = np.clip(reward, a_min=self.min_reward,a_max=1)
             self.cumulative_reward += reward
         else:
             reward = self.cumulative_reward
