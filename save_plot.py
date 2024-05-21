@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import os
 import os.path as op
 from mpl_toolkits.mplot3d import Axes3D
-
+import torch
 script_dir = op.dirname(op.realpath(__file__))
 
 def save_array(array,title):
@@ -88,7 +88,13 @@ def plot_spectra(arrays, title, display=False):
     plt.savefig(file_path)
     if display:
         plt.show()
-
+def save_weights(policy,name):
+    folder_weight = 'weight'
+    folder_path = op.join(script_dir,folder_weight)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    file_path = op.join(folder_path,name+'.pth')
+    torch.save(policy.state_dict(), file_path)
 if __name__ == "__main__":
     test_array = np.array([[1,2,4],[1,2,3]])
     test_name = 'name'

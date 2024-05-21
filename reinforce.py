@@ -152,7 +152,7 @@ if __name__ == "__main__":
     else:
         print(f"Directory {dir_path} does not exist.")
     scores = reinforce(policy, optimizer, env, n_episodes=10)
-
+    save_weights(policy,'weight_'+str(number_of_atoms)+'_atoms')
     # Use the trained policy to generate the molecule
     state = env.reset()
     flattened_state = get_flattened_state(state)
@@ -175,12 +175,12 @@ if __name__ == "__main__":
     np.where(env.state == 1)
     print(policy)
     #################################################
-    # test function
-    point1 = [-0.475, -0.475, 0.0]
-    point2 = [0.475, 0.475, 0.0]
+    # # test function
+    # point1 = [-0.475, -0.475, 0.0]
+    # point2 = [0.475, 0.475, 0.0]
 
-    print(calculate_distance(point1, point2))
-    print(calculate_distance(positions[0], positions[1]))
+    # print(calculate_distance(point1, point2))
+    # print(calculate_distance(positions[0], positions[1]))
 
     ##################
 
@@ -190,6 +190,7 @@ if __name__ == "__main__":
     arrays.append(spectra[:, 0])
     arrays.append(spectra_y)
     name = 'spectra_'+str(number_of_atoms)+'_atoms'
+    save_array(spectra,title=name)
     plot_spectra(arrays=arrays,title=name,display=False)
     # plt.figure(figsize=(10, 5))
     # plt.plot(env.ref_spectra[:, 0], ref_spectra_y, label='Reference Spectrum')
