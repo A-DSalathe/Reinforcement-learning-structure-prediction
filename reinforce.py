@@ -176,15 +176,6 @@ if __name__ == "__main__":
     spectra_y = spectra[:, 1]
     np.where(env.state == 1)
     print(policy)
-    #################################################
-    # # test function
-    # point1 = [-0.475, -0.475, 0.0]
-    # point2 = [0.475, 0.475, 0.0]
-
-    # print(calculate_distance(point1, point2))
-    # print(calculate_distance(positions[0], positions[1]))
-
-    ##################
 
     arrays = []
     arrays.append(env.ref_spectra[:, 0])
@@ -209,7 +200,10 @@ if __name__ == "__main__":
     save_array(positions,'pos_'+str(number_of_atoms)+'_atoms')
     save_array(resolution,'res_'+str(number_of_atoms)+'_atoms')
     save_array(grid_dimensions,'grid_dim_'+str(number_of_atoms)+'_atoms')
-    plot_3d_structure(positions, resolution, grid_dimensions)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[30, 30], title='3d_structure', display=True)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 0], title='front_view', display=True)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 90], title='side_view', display=True)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[90, 0], title='top_view', display=True)
 
     flattened_state_test = get_flattened_state(env.reset())
     action, log_prob = policy.act(flattened_state_test)

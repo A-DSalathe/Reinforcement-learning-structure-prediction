@@ -47,7 +47,7 @@ def plot_sphere(ax, center, radius, color='r'):
     ax.plot_surface(x, y, z, color=color, alpha=0.6)
 
 
-def plot_3d_structure(positions, resolution, grid_dimensions):
+def plot_and_save_view(positions, resolution, grid_dimensions, view_angle, title, display=False):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
@@ -67,7 +67,20 @@ def plot_3d_structure(positions, resolution, grid_dimensions):
                        grid_dimensions[1] * resolution[1],
                        grid_dimensions[2] * resolution[2]])
 
-    plt.show()
+    ax.view_init(elev=view_angle[0], azim=view_angle[1])
+
+    folder_3d_plot = '3d_plot'
+    folder_path = op.join(script_dir, folder_3d_plot)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    file_path = op.join(folder_path, title + '.png')
+    plt.savefig(file_path)
+
+    if display:
+        plt.show()
+    else:
+        plt.close(fig)  # Close the figure to free up memory
+
 
 def plot_spectra(arrays, title, display=False):
     plt.figure(figsize=(10, 5))
@@ -88,6 +101,7 @@ def plot_spectra(arrays, title, display=False):
     plt.savefig(file_path)
     if display:
         plt.show()
+        
 def save_weights(policy,name):
     folder_weight = 'weight'
     folder_path = op.join(script_dir,folder_weight)
