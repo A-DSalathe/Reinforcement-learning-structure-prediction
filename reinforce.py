@@ -115,7 +115,7 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print
         if e % print_every == 0:
             print(f'Episode {e}\t Score: {sum(rewards):.2f}')
 
-    plot_scores(scores)  # Plot the scores at the end of training
+    plot_scores(scores,'score_'+str(number_of_atoms)+'_atoms',display=False)  # Plot the scores at the end of training
     print(scores)
     return scores
 
@@ -184,18 +184,28 @@ if __name__ == "__main__":
 
     ##################
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(env.ref_spectra[:, 0], ref_spectra_y, label='Reference Spectrum')
-    plt.plot(spectra[:, 0], spectra_y, label='Generated Spectrum', linestyle='--')
-    plt.xlabel('Wavenumber (cm^-1)')
-    plt.ylabel('Intensity')
-    plt.legend()
-    plt.show()
+    arrays = []
+    arrays.append(env.ref_spectra[:, 0])
+    arrays.append(ref_spectra_y)
+    arrays.append(spectra[:, 0])
+    arrays.append(spectra_y)
+    name = 'spectra_'+str(number_of_atoms)+'_atoms'
+    plot_spectra(arrays=arrays,title=name,display=False)
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(env.ref_spectra[:, 0], ref_spectra_y, label='Reference Spectrum')
+    # plt.plot(spectra[:, 0], spectra_y, label='Generated Spectrum', linestyle='--')
+    # plt.xlabel('Wavenumber (cm^-1)')
+    # plt.ylabel('Intensity')
+    # plt.legend()
+    # plt.show()
 
 
     resolution = env.resolution
     grid_dimensions = env.dimensions
     print(grid_dimensions)
+    save_array(positions,'pos_'+str(number_of_atoms)+'_atoms')
+    save_array(resolution,'res_'+str(number_of_atoms)+'_atoms')
+    save_array(grid_dimensions,'grid_dim_'+str(number_of_atoms)+'_atoms')
     plot_3d_structure(positions, resolution, grid_dimensions)
 
     flattened_state_test = get_flattened_state(env.reset())

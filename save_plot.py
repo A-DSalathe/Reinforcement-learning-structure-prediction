@@ -6,15 +6,15 @@ from mpl_toolkits.mplot3d import Axes3D
 
 script_dir = op.dirname(op.realpath(__file__))
 
-def save_array(array,name):
+def save_array(array,title):
     folder_name = 'numpy_array_folder'
     folder_path = op.join(script_dir,folder_name)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-    file_path = op.join(folder_path,name+'.npy')
+    file_path = op.join(folder_path,title+'.npy')
     np.save(file_path, array)
 
-def plot_scores(scores):
+def plot_scores(scores, title, display=False):
     # Convert scores to a numpy array for easier manipulation
     scores_array = np.array(scores)
 
@@ -29,7 +29,14 @@ def plot_scores(scores):
     plt.ylabel('Score')
     plt.title('Evolution of the Score over Episodes')
     plt.legend()
-    plt.show()
+    folder_score = 'score'
+    folder_path = op.join(script_dir,folder_score)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    file_path = op.join(folder_path,title+'.png')
+    plt.savefig(file_path)
+    if display:
+        plt.show()
 
 def plot_sphere(ax, center, radius, color='r'):
     u = np.linspace(0, 2 * np.pi, 100)
@@ -62,12 +69,30 @@ def plot_3d_structure(positions, resolution, grid_dimensions):
 
     plt.show()
 
-
+def plot_spectra(arrays, title, display=False):
+    plt.figure(figsize=(10, 5))
+    ref_frequency = arrays[0]
+    ref_spectra_y = arrays[1]
+    frequency = arrays[2]
+    spectra_y = arrays[3]
+    plt.plot(ref_frequency, ref_spectra_y, label='Reference Spectrum')
+    plt.plot(frequency, spectra_y, label='Generated Spectrum', linestyle='--')
+    plt.xlabel('Wavenumber (cm^-1)')
+    plt.ylabel('Intensity')
+    plt.legend()
+    folder_spectra = 'spectra'
+    folder_path = op.join(script_dir,folder_spectra)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    file_path = op.join(folder_path,title+'.png')
+    plt.savefig(file_path)
+    if display:
+        plt.show()
 
 if __name__ == "__main__":
     test_array = np.array([[1,2,4],[1,2,3]])
     test_name = 'name'
-    save_array(array=test_array,name=test_name)
+    save_array(array=test_array,title=test_name)
     folder_name = 'numpy_array_folder'
     folder_path = op.join(script_dir,folder_name)
     file_path = op.join(folder_path,test_name+'.npy')
