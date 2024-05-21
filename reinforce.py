@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import shutil
 import math
+from save_plot import *
 
 script_dir = op.dirname(op.realpath(__file__))
 
@@ -64,22 +65,7 @@ def discount_rewards(rewards, gamma=0.99):
     return discounted
 
 
-def plot_scores(scores):
-    # Convert scores to a numpy array for easier manipulation
-    scores_array = np.array(scores)
 
-    # Identify and filter out extreme values
-    filtered_scores = np.clip(scores_array, a_min=-10, a_max=1)
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(filtered_scores, label='Score per Episode')
-    plt.ylim(
-        [np.min(filtered_scores) - 1, np.max(filtered_scores) + 1])  # Adjust y-axis limits for better visualization
-    plt.xlabel('Episode')
-    plt.ylabel('Score')
-    plt.title('Evolution of the Score over Episodes')
-    plt.legend()
-    plt.show()
 
 
 def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print_every=2, epsilon_start=1.0, epsilon_end=0.1,
@@ -194,7 +180,7 @@ if __name__ == "__main__":
             print(f"An error occurred while trying to remove the directory: {e}")
     else:
         print(f"Directory {dir_path} does not exist.")
-    scores = reinforce(policy, optimizer, env, n_episodes=1000)
+    scores = reinforce(policy, optimizer, env, n_episodes=10)
 
     # Use the trained policy to generate the molecule
     state = env.reset()
