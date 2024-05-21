@@ -95,6 +95,9 @@ def save_weights(policy,name):
         os.makedirs(folder_path)
     file_path = op.join(folder_path,name+'.pth')
     torch.save(policy.state_dict(), file_path)
+
+
+    
 if __name__ == "__main__":
     test_array = np.array([[1,2,4],[1,2,3]])
     test_name = 'name'

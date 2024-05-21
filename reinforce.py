@@ -89,7 +89,9 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print
             flattened_state = get_flattened_state(state)
             if done:
                 break
-
+        n_points = len(np.where(state==1)[0])
+        if done and n_points!=number_of_atoms:
+            rewards.append(-10)
         scores_deque.append(sum(rewards))
         scores.append(sum(rewards))
 
