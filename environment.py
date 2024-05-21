@@ -101,13 +101,13 @@ class Molecule_Environment:
             reward_spectra = 0
             if self.done and self.cumulative_reward>self.min_reward:
                 reward_spectra = -self.diff_spectra()
+                print("diff spectra =", -self.diff_spectra())
                 reward += reward_spectra
             reward = np.clip(reward, a_min=self.min_reward,a_max=1)
             reward_spectra = np.clip(reward_spectra, a_min=self.min_reward, a_max=1)
             self.cumulative_reward += reward_spectra
         else:
             reward = 0
-        
         return self.state, reward, self.done
 
     def get_reward_placement(self, action):

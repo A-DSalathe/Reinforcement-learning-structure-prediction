@@ -141,7 +141,7 @@ def compute_greedy_reward_and_loss(env, policy):
         flattened_state = get_flattened_state(state)
 
     # Compute the loss using the environment's diff_spectra function
-    eval_loss = env.diff_spectra()
+    eval_loss = - env.diff_spectra()
     return total_reward, eval_loss
 
 
