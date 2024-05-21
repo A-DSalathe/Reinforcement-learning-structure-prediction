@@ -65,13 +65,11 @@ def discount_rewards(rewards, gamma=0.99):
     return discounted
 
 
-
-
-
-def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print_every=2, epsilon_start=1.0, epsilon_end=0.1,
-              epsilon_decay=0.995):
+def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print_every=2, eval_every=1, epsilon_start=1.0, epsilon_end=0.1, epsilon_decay=0.995):
     scores_deque = deque(maxlen=100)
     scores = []
+    eval_losses = []
+    eval_rewards = []
     epsilon = epsilon_start
 
     for e in range(1, n_episodes + 1):
@@ -89,15 +87,16 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print
             flattened_state = get_flattened_state(state)
             if done:
                 break
-        n_points = len(np.where(state==1)[0])
-        if done and n_points!=number_of_atoms:
+
+        n_points = len(np.where(state == 1)[0])
+        if done and n_points != number_of_atoms:
             rewards.append(-10)
+
         scores_deque.append(sum(rewards))
         scores.append(sum(rewards))
 
         discounts = [gamma ** i for i in range(len(rewards) + 1)]
-        rewards_to_go = [sum([discounts[j] * rewards[j + t] for j in range(len(rewards) - t)]) for t in
-                         range(len(rewards))]
+        rewards_to_go = [sum([discounts[j] * rewards[j + t] for j in range(len(rewards) - t)]) for t in range(len(rewards))]
 
         policy_loss = []
         for log_prob, G in zip(saved_log_probs, rewards_to_go):
@@ -117,18 +116,33 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print
         if e % print_every == 0:
             print(f'Episode {e}\t Score: {sum(rewards):.2f}')
 
-    plot_scores(scores,'score_'+str(number_of_atoms)+'_atoms',display=False)  # Plot the scores at the end of training
+        # Evaluate loss and reward at regular intervals using greedy policy
+        if e % eval_every == 0:
+            eval_reward, eval_loss = compute_greedy_reward_and_loss(env, policy)
+            eval_rewards.append(eval_reward)
+            eval_losses.append(eval_loss)
+            print(f'Episode {e}\t Evaluation Loss: {eval_loss:.2f}\t Greedy Reward: {eval_reward:.2f}')
+
+    plot_eval_loss_and_rewards(eval_losses, eval_rewards, 'eval_loss_and_rewards_' + str(number_of_atoms) + '_atoms', display=False)
     print(scores)
-    return scores
+    return scores, eval_losses, eval_rewards
 
+def compute_greedy_reward_and_loss(env, policy):
+    state = env.reset()
+    flattened_state = get_flattened_state(state)
+    done = False
+    total_reward = 0
 
-def calculate_distance(point1, point2):
-    distance = np.linalg.norm(np.array(point2) - np.array(point1))
-    return distance
+    while not done:
+        action_idx, _ = policy.act(flattened_state, epsilon=0.0)
+        action = env.actions[action_idx]  # Convert action index to coordinates
+        state, reward, done = env.step(action)
+        total_reward += reward
+        flattened_state = get_flattened_state(state)
 
-
-############################
-# 3d ploting
+    # Compute the loss using the environment's diff_spectra function
+    eval_loss = env.diff_spectra()
+    return total_reward, eval_loss
 
 
 if __name__ == "__main__":
@@ -155,13 +169,14 @@ if __name__ == "__main__":
         print(f"Directory {dir_path} does not exist.")
     scores = reinforce(policy, optimizer, env, n_episodes=10)
     save_weights(policy,'weight_'+str(number_of_atoms)+'_atoms')
+
     # Use the trained policy to generate the molecule
     state = env.reset()
     flattened_state = get_flattened_state(state)
     done = False
 
     while not done:
-        action_idx, _ = policy.act(flattened_state,epsilon=0.0)
+        action_idx, _ = policy.act(flattened_state, epsilon=0.0)
         action = env.actions[action_idx]  # Convert action index to coordinates
         state, _, done = env.step(action)
         flattened_state = get_flattened_state(state)
@@ -182,9 +197,10 @@ if __name__ == "__main__":
     arrays.append(ref_spectra_y)
     arrays.append(spectra[:, 0])
     arrays.append(spectra_y)
-    name = 'spectra_'+str(number_of_atoms)+'_atoms'
-    save_array(spectra,title=name)
-    plot_spectra(arrays=arrays,title=name,display=False)
+    name = 'spectra_' + str(number_of_atoms) + '_atoms'
+    save_array(spectra, title=name)
+    plot_spectra(arrays=arrays, title=name, display=False)
+    
     # plt.figure(figsize=(10, 5))
     # plt.plot(env.ref_spectra[:, 0], ref_spectra_y, label='Reference Spectrum')
     # plt.plot(spectra[:, 0], spectra_y, label='Generated Spectrum', linestyle='--')
@@ -193,17 +209,22 @@ if __name__ == "__main__":
     # plt.legend()
     # plt.show()
 
-
     resolution = env.resolution
     grid_dimensions = env.dimensions
     print(grid_dimensions)
-    save_array(positions,'pos_'+str(number_of_atoms)+'_atoms')
-    save_array(resolution,'res_'+str(number_of_atoms)+'_atoms')
-    save_array(grid_dimensions,'grid_dim_'+str(number_of_atoms)+'_atoms')
-    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[30, 30], title='3d_structure', display=True)
-    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 0], title='front_view', display=True)
-    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 90], title='side_view', display=True)
-    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[90, 0], title='top_view', display=True)
+    save_array(positions, 'pos_' + str(number_of_atoms) + '_atoms')
+    save_array(resolution, 'res_' + str(number_of_atoms) + '_atoms')
+    save_array(grid_dimensions, 'grid_dim_' + str(number_of_atoms) + '_atoms')
+
+    # Save the 3D plot with multiple views
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 0],
+                       title='front_view_' + str(number_of_atoms) + '_atoms', display=False)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 90],
+                       title='side_view_' + str(number_of_atoms) + '_atoms', display=False)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[90, 0],
+                       title='top_view_' + str(number_of_atoms) + '_atoms', display=False)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[30, 30],
+                       title='3d_structure_' + str(number_of_atoms) + '_atoms', display=True)
 
     flattened_state_test = get_flattened_state(env.reset())
     action, log_prob = policy.act(flattened_state_test)

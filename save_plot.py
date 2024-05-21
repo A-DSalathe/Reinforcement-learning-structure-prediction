@@ -110,7 +110,23 @@ def save_weights(policy,name):
     file_path = op.join(folder_path,name+'.pth')
     torch.save(policy.state_dict(), file_path)
 
-
+def plot_eval_loss_and_rewards(eval_losses, eval_rewards, title, display=False):
+    plt.figure(figsize=(10, 5))
+    intervals = np.arange(0, len(eval_losses) * 10, 10)  # Assuming eval_every is 10
+    plt.plot(intervals, eval_losses, label='Evaluation Loss')
+    plt.plot(intervals, eval_rewards, label='Greedy Reward')
+    plt.xlabel('Episode')
+    plt.ylabel('Value')
+    plt.title('Evaluation Loss and Greedy Reward over Time')
+    plt.legend()
+    folder_eval_loss = 'eval_loss_and_rewards'
+    folder_path = op.join(script_dir, folder_eval_loss)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    file_path = op.join(folder_path, title + '.png')
+    plt.savefig(file_path)
+    if display:
+        plt.show()
     
 if __name__ == "__main__":
     test_array = np.array([[1,2,4],[1,2,3]])
