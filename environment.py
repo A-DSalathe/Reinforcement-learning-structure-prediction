@@ -97,11 +97,14 @@ class Molecule_Environment:
             if place_atom:
                 self.state[action] = 1
                 self.chem_symbols.append("B")
-
-            if self.done:
-                reward -= self.diff_spectra()
-            reward = np.clip(reward, a_min=self.min_reward,a_max=1)
             self.cumulative_reward += reward
+            reward_spectra = 0
+            if self.done and self.cumulative_reward>self.min_reward:
+                reward_spectra = -self.diff_spectra()
+                reward += reward_spectra
+            reward = np.clip(reward, a_min=self.min_reward,a_max=1)
+            reward_spectra = np.clip(reward_spectra, a_min=self.min_reward, a_max=1)
+            self.cumulative_reward += reward_spectra
         else:
             reward = 0
         
@@ -157,7 +160,7 @@ class Molecule_Environment:
 
 if __name__ == "__main__":
 
-    dimensions = (21,21,21)
+    dimensions = (11,11,11)
     resolution = np.array([0.2,0.2,0.2])
     env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
     # env = Molecule_Environment()

@@ -104,8 +104,8 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print
             if done:
                 break
 
-        scores_deque.append(rewards[-1])
-        scores.append(rewards[-1])
+        scores_deque.append(sum(rewards))
+        scores.append(sum(rewards))
 
         discounts = [gamma ** i for i in range(len(rewards) + 1)]
         rewards_to_go = [sum([discounts[j] * rewards[j + t] for j in range(len(rewards) - t)]) for t in
@@ -174,7 +174,7 @@ def plot_3d_structure(positions, resolution, grid_dimensions):
 
 if __name__ == "__main__":
     # Assuming Molecule_Environment is defined as provided and properly imported
-    number_of_atoms = 2
+    number_of_atoms = 7
     env = Molecule_Environment(n_atoms = number_of_atoms, chemical_symbols = ["B"], dimensions = (21,21,21), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_custom_1.dat')), print_spectra=0)
     flatten_dimensions = np.prod(env.dimensions)
     # state_size = math.comb(flatten_dimensions, number_of_atoms-1)  # Flattened state size
@@ -194,7 +194,7 @@ if __name__ == "__main__":
             print(f"An error occurred while trying to remove the directory: {e}")
     else:
         print(f"Directory {dir_path} does not exist.")
-    scores = reinforce(policy, optimizer, env, n_episodes=100)
+    scores = reinforce(policy, optimizer, env, n_episodes=1000)
 
     # Use the trained policy to generate the molecule
     state = env.reset()
