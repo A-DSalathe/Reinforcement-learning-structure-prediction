@@ -124,3 +124,6 @@ dmypy.json
 .pyre/
 
 ir/*.json
+
+# Ignore PNG image files
+*.png
