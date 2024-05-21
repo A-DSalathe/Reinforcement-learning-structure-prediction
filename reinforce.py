@@ -127,36 +127,7 @@ def calculate_distance(point1, point2):
 
 ############################
 # 3d ploting
-def plot_sphere(ax, center, radius, color='r'):
-    u = np.linspace(0, 2 * np.pi, 100)
-    v = np.linspace(0, np.pi, 100)
-    x = center[0] + radius * np.outer(np.cos(u), np.sin(v))
-    y = center[1] + radius * np.outer(np.sin(u), np.sin(v))
-    z = center[2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
-    ax.plot_surface(x, y, z, color=color, alpha=0.6)
 
-
-def plot_3d_structure(positions, resolution, grid_dimensions):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    for pos in positions:
-        plot_sphere(ax, pos, radius=0.1)
-
-    # Set labels
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-
-    ax.set_xlim([0, grid_dimensions[0] * resolution[0]])
-    ax.set_ylim([0, grid_dimensions[1] * resolution[1]])
-    ax.set_zlim([0, grid_dimensions[2] * resolution[2]])
-
-    ax.set_box_aspect([grid_dimensions[0] * resolution[0],
-                       grid_dimensions[1] * resolution[1],
-                       grid_dimensions[2] * resolution[2]])
-
-    plt.show()
 
 if __name__ == "__main__":
     # Assuming Molecule_Environment is defined as provided and properly imported

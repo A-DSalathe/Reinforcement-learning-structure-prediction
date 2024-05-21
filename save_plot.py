@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 import os.path as op
+from mpl_toolkits.mplot3d import Axes3D
 
 script_dir = op.dirname(op.realpath(__file__))
 
