@@ -48,7 +48,7 @@ def path_to_refspectra(ref_spectra_path):
         return data
 
 class Molecule_Environment:
-    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (7,7,7), resolution=np.array([0.3,0.3,0.3]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0, min_reward=-10):
+    def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions = (11,11,11), resolution=np.array([0.2,0.2,0.2]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0, min_reward=-10):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
