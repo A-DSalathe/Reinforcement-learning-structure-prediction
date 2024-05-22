@@ -111,14 +111,24 @@ def save_weights(policy,name):
     torch.save(policy.state_dict(), file_path)
 
 def plot_eval_loss_and_rewards(eval_losses, eval_rewards, title, display=False):
-    plt.figure(figsize=(10, 5))
+    fig, ax1 = plt.subplots(figsize=(10, 5))
+
     intervals = np.arange(0, len(eval_losses) * 10, 10)  # Assuming eval_every is 10
-    plt.plot(intervals, eval_losses, label='Evaluation Loss')
-    plt.plot(intervals, eval_rewards, label='Greedy Reward')
-    plt.xlabel('Episode')
-    plt.ylabel('Value')
+
+    ax1.plot(intervals, eval_losses, label='Evaluation Loss', color='b')
+    ax1.set_xlabel('Episode')
+    ax1.set_ylabel('Evaluation Loss', color='b')
+    ax1.tick_params(axis='y', labelcolor='b')
+
+    ax2 = ax1.twinx()
+    ax2.plot(intervals, eval_rewards, label='Greedy Reward', color='r')
+    ax2.set_ylabel('Greedy Reward', color='r')
+    ax2.tick_params(axis='y', labelcolor='r')
+
+    fig.tight_layout()
+    fig.legend(loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax1.transAxes)
     plt.title('Evaluation Loss and Greedy Reward over Time')
-    plt.legend()
+
     folder_eval_loss = 'eval_loss_and_rewards'
     folder_path = op.join(script_dir, folder_eval_loss)
     if not os.path.exists(folder_path):

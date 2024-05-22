@@ -1,7 +1,6 @@
 from environment import Molecule_Environment
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
 import numpy as np
@@ -11,7 +10,6 @@ from spectra import spectra_from_arrays
 import os
 import os.path as op
 import shutil
-import math
 from save_plot import *
 
 script_dir = op.dirname(op.realpath(__file__))
@@ -19,24 +17,26 @@ script_dir = op.dirname(op.realpath(__file__))
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class Policy(nn.Module):
-    def __init__(self, state_size, action_size, hidden_size=64):
-        super(Policy, self).__init__()
-        self.fc1 = nn.Linear(state_size, hidden_size)
-        #self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, action_size)
-        self.init_weights()
+# Define the neural network
+class PolicyNetwork(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(PolicyNetwork, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, output_dim)
+        self.apply(self.init_weights)
 
-    def init_weights(self):
-        nn.init.xavier_uniform_(self.fc1.weight)
-        nn.init.zeros_(self.fc1.bias)
-        nn.init.xavier_uniform_(self.fc2.weight)
-        nn.init.zeros_(self.fc2.bias)
+    def init_weights(self, m):
+        if type(m) == nn.Linear:
+            nn.init.kaiming_uniform_(m.weight)
+            nn.init.constant_(m.bias, 0)
 
-    def forward(self, state):
-        x = F.relu(self.fc1(state))
-        x = self.fc2(x)
-        return F.softmax(x, dim=1)
+    def forward(self, x):
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
+        return torch.softmax(x, dim=1)
 
     def act(self, state, epsilon=0.1):
         state = torch.from_numpy(state).float().unsqueeze(0).to(device)
@@ -97,20 +97,12 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=0.99, prin
 
         optimizer.zero_grad()
         policy_loss.backward()
-
-        # Debugging: Print gradients
-        for name, param in policy.named_parameters():
-            if param.grad is not None:
-                print(f'Gradients for {name}: {param.grad}')
-            else:
-                print(f'No gradients for {name}')
-
         optimizer.step()
 
         epsilon = max(epsilon_end, epsilon_decay * epsilon)  # Decay epsilon
 
         if e % print_every == 0:
-            print(f'Episode {e}\t Score: {sum(rewards):.2f}')
+            print(f'Episode {e}\t Score: {sum(rewards)}')
 
         if e % eval_every == 0:
             eval_reward, eval_loss = compute_greedy_reward_and_loss(env, policy)
@@ -142,12 +134,12 @@ def compute_greedy_reward_and_loss(env, policy):
 
 if __name__ == "__main__":
     number_of_atoms = 2
-    env = Molecule_Environment(n_atoms=number_of_atoms, chemical_symbols=["B"], dimensions=(11, 11, 11), resolution=np.array([0.1, 0.1, 0.1]), ref_spectra_path=op.join(script_dir, op.join('references', 'reference_1_B.dat')), print_spectra=0)
+    env = Molecule_Environment(n_atoms=number_of_atoms, chemical_symbols=["B"], dimensions=(11, 11, 11), resolution=np.array([0.2375, 0.2375, 0.2375]), ref_spectra_path=op.join(script_dir, op.join('references', 'reference_1_B.dat')), print_spectra=0)
     flatten_dimensions = np.prod(env.dimensions)
     state_size = flatten_dimensions
     action_size = len(env.actions)
-    policy = Policy(state_size, action_size).to(device)
-    optimizer = optim.Adam(policy.parameters(), lr=0.005)
+    policy = PolicyNetwork(state_size, 64, action_size).to(device)
+    optimizer = optim.Adam(policy.parameters(), lr=0.001)
     dir_path = "ir"
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path, ignore_errors=True)
