@@ -95,8 +95,16 @@ def generate_action(n_atoms, covalent_radii_pixels):
             coordinates_index = np.hstack((sphere_coord, (i+2)*np.ones((n, 1))))
             actions = np.concatenate((actions, coordinates_index), axis=0)
     return actions
+
+def convert_numpy_where_numpy(array):
+    x1 = array[0]
+    x2 = array[1]
+    x3 = array[2]
+    output = np.array([x1[0],x2[0],x3[0]])
+    return output
+
 class Molecule_Environment:
-    def __init__(self, n_atoms: int = 7, chemical_symbols: list = ["B"], dimensions = (51,51,51), resolution=np.array([0.2,0.2,0.2]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0, min_reward=-10):
+    def __init__(self, n_atoms: int = 3, chemical_symbols: list = ["B"], dimensions = (51,51,51), resolution=np.array([0.2,0.2,0.2]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0, min_reward=-10):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
@@ -148,7 +156,7 @@ class Molecule_Environment:
             # reward = 0
 
             if place_atom:
-                self.grid[action] = self.n_step
+                self.grid[pos[0],pos[1],pos[2]] = self.n_step+1
                 self.chem_symbols.append("B")
                 self.n_step +=1
             self.cumulative_reward += reward
@@ -157,11 +165,10 @@ class Molecule_Environment:
                 reward_spectra = -self.diff_spectra()
                 print("diff spectra =", -self.diff_spectra())
                 reward += reward_spectra
-            reward = np.clip(reward, a_min=self.min_reward,a_max=1)
-            reward_spectra = np.clip(reward_spectra, a_min=self.min_reward, a_max=1)
             self.cumulative_reward += reward_spectra
         else:
             reward = 0
+        self.state = self.grid
         return self.state, reward, self.done
 
     def get_reward_placement(self, action):
@@ -174,7 +181,7 @@ class Molecule_Environment:
         
         # Smooth penalty function
         if min_distance == 0:
-            reward = -10
+            reward = -1
         elif min_distance < lower_bound:
             reward = -np.exp(-10 * (min_distance - lower_bound))  # Smooth penalty for being too close
         elif min_distance > upper_bound:
@@ -211,45 +218,32 @@ class Molecule_Environment:
         return self.actions[index]
     def action_position(self,action):
         grid = self.grid
-        number_atoms_grid = len(np.where(grid==1))
-        coord = action[0:2]
+        grid = grid.astype(int)
+        number_atoms_grid = len(np.where(grid!=0)[0])
+        coord = action[0:3]
         atom_sel = action[3]
         atom_sel = (atom_sel % number_atoms_grid)
         if not atom_sel:
             atom_sel = number_atoms_grid
-        coord_atom_sel = np.array(np.where(grid==atom_sel))
+        coord_atom_sel = np.where(grid==atom_sel)
+        coord_atom_sel = convert_numpy_where_numpy(coord_atom_sel)
+        # print(coord.shape)
         new_coord = coord + coord_atom_sel
         new_coord = np.clip(new_coord,a_min=0, a_max=self.dimensions[0])
+        new_coord = np.round(new_coord).astype(int)
         return new_coord
 
 if __name__ == "__main__":
-    env = Molecule_Environment()
-    print(env.actions.shape)
-    print(env.actions)
-    print(env.sample_action())
-    # dimensions = (11,11,11)
-    # resolution = np.array([0.2,0.2,0.2])
-    # env = Molecule_Environment(dimensions=dimensions, resolution=resolution)
-    # # env = Molecule_Environment()
-    # print(env)
-    # state_flatten = env.state.flatten()
-    # print(state_flatten)
-    # # print(env.state)
-    # possible_actions = env.get_actions()
-    # env.reset()
-    # # state, reward, done = env.step((3, 2, 1))
-    # # print(state)
-    # # print(reward)
-    # # print(done)
-    # env.print_spectra = 1
-    # # state, reward, done = env.step((7,9,5))
-    # action = env.sample_action()
-    # print(action)
-
-    # state, reward, done = env.step(action)
-    # print(state)
-    # print(reward)
-    # print(done)
+    env = Molecule_Environment(dimensions=(5,5,5),resolution=np.array([0.5,0.5,0.5]))
+    # print(env.actions.shape)
+    # print(env.actions)
+    # print(env.sample_action())
+    done = False
+    while not done:
+        action = env.sample_action()
+        state, reward, done = env.step(action)
+        print(reward,done)
+    print(state)
     # sphere = generate_spherical_shell(2.5, 3.5)
     # print(sphere)
     # # Extract coordinates of the spherical shell's surface
