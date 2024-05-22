@@ -147,8 +147,8 @@ def compute_greedy_reward_and_loss(env, policy):
 
 if __name__ == "__main__":
     # Assuming Molecule_Environment is defined as provided and properly imported
-    number_of_atoms = 2
-    env = Molecule_Environment(n_atoms = number_of_atoms, chemical_symbols = ["B"], dimensions = (21,21,21), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0)
+    number_of_atoms = 7
+    env = Molecule_Environment(n_atoms = number_of_atoms, chemical_symbols = ["B"], dimensions = (21,21,21), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_custom_1.dat')), print_spectra=0)
     flatten_dimensions = np.prod(env.dimensions)
     # state_size = math.comb(flatten_dimensions, number_of_atoms-1)  # Flattened state size
     print(flatten_dimensions)
@@ -167,7 +167,7 @@ if __name__ == "__main__":
             print(f"An error occurred while trying to remove the directory: {e}")
     else:
         print(f"Directory {dir_path} does not exist.")
-    scores = reinforce(policy, optimizer, env, n_episodes=10)
+    scores = reinforce(policy, optimizer, env, n_episodes=20)
     save_weights(policy,'weight_'+str(number_of_atoms)+'_atoms')
 
     # Use the trained policy to generate the molecule
@@ -225,8 +225,4 @@ if __name__ == "__main__":
                        title='top_view_' + str(number_of_atoms) + '_atoms', display=False)
     plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[30, 30],
                        title='3d_structure_' + str(number_of_atoms) + '_atoms', display=True)
-
-    flattened_state_test = get_flattened_state(env.reset())
-    action, log_prob = policy.act(flattened_state_test)
-    print(log_prob)
 
