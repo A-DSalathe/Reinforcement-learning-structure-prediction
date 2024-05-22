@@ -204,6 +204,7 @@ class Molecule_Environment:
         self.spectra = spectra
         spectra_y = spectra[:,1]
         return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)*10**6
+
     def sample_action(self):
         actions = self.actions
         return actions[np.random.randint(0, len(actions))]
