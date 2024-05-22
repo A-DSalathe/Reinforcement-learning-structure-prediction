@@ -65,7 +65,7 @@ def discount_rewards(rewards, gamma=0.99):
     return discounted
 
 
-def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print_every=2, eval_every=1, epsilon_start=1.0, epsilon_end=0.1, epsilon_decay=0.995):
+def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print_every=2, eval_every=50, epsilon_start=1.0, epsilon_end=0.1, epsilon_decay=0.995):
     scores_deque = deque(maxlen=100)
     scores = []
     eval_losses = []
@@ -148,7 +148,7 @@ def compute_greedy_reward_and_loss(env, policy):
 if __name__ == "__main__":
     # Assuming Molecule_Environment is defined as provided and properly imported
     number_of_atoms = 7
-    env = Molecule_Environment(n_atoms = number_of_atoms, chemical_symbols = ["B"], dimensions = (21,21,21), resolution=np.array([0.1,0.1,0.1]), ref_spectra_path = op.join(script_dir,op.join('references','reference_custom_1.dat')), print_spectra=0)
+    env = Molecule_Environment(n_atoms = number_of_atoms, chemical_symbols = ["B"], dimensions = (41,41,41), resolution=np.array([0.4,0.4,0.4]), ref_spectra_path = op.join(script_dir,op.join('references','reference_custom_1.dat')), print_spectra=0, cov_radi=2)
     flatten_dimensions = np.prod(env.dimensions)
     # state_size = math.comb(flatten_dimensions, number_of_atoms-1)  # Flattened state size
     print(flatten_dimensions)
