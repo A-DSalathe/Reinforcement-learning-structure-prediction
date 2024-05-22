@@ -33,7 +33,7 @@ def find_distances_to_new_point(array, new_point):
         raise ValueError("New point coordinates are out of the array bounds.")
 
     # Find all existing points where the value is 1
-    existing_points = np.argwhere(array == 1)
+    existing_points = np.argwhere(array != 0)
     # Convert new_point to a numpy array for distance calculation
     new_point_array = np.array(new_point)
     # Compute distances between the new point and all existing points
@@ -104,7 +104,7 @@ def convert_numpy_where_numpy(array):
     return output
 
 class Molecule_Environment:
-    def __init__(self, n_atoms: int = 3, chemical_symbols: list = ["B"], dimensions = (51,51,51), resolution=np.array([0.2,0.2,0.2]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0, min_reward=-10):
+    def __init__(self, n_atoms: int = 3, chemical_symbols: list = ["B"], dimensions = (51,51,51), resolution=np.array([0.2,0.2,0.2]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0, min_reward=-10, cov_radi=0.9):
         self.n_atoms = n_atoms
         self.chemical_symbols = chemical_symbols
         self.dimensions = dimensions
@@ -115,7 +115,7 @@ class Molecule_Environment:
         center = (dimensions[0]//2, dimensions[1]//2, dimensions[2]//2)
         self.grid[center] = 1
         self.state = self.grid
-        self.covalent_radii = 0.9
+        self.covalent_radii = cov_radi
         covalent_radii_pixels = self.covalent_radii / self.resolution[0]
         self.actions = generate_action(n_atoms, covalent_radii_pixels)
         self.done = False
@@ -181,7 +181,7 @@ class Molecule_Environment:
         
         # Smooth penalty function
         if min_distance == 0:
-            reward = -1
+            reward = -2
         elif min_distance < lower_bound:
             reward = -np.exp(-10 * (min_distance - lower_bound))  # Smooth penalty for being too close
         elif min_distance > upper_bound:
