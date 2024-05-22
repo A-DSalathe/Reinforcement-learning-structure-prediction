@@ -38,29 +38,59 @@ class PolicyNetwork(nn.Module):
         x = self.fc3(x)
         return torch.softmax(x, dim=1)
 
-    def act(self, state, epsilon=0.1):
+    def act(self, state, mode='explore', epsilon=0.1):
         state = torch.from_numpy(state).float().unsqueeze(0).to(device)
         probs = self.forward(state).squeeze(0)
         m = Categorical(probs)
-        if np.random.rand() < epsilon:
-            action = m.sample()
+
+        greedy_action = torch.argmax(probs).item()
+
+        if mode == 'greedy':
+            action = greedy_action
         else:
-            action = torch.argmax(probs)
-        log_prob = m.log_prob(action)
-        return action.item(), log_prob
+            # Define the probability distribution
+            random_prob = 1 / 3
+            greedy_prob = 2 / 3
+            neighbor_prob = greedy_prob / 2
+            actual_greedy_prob = greedy_prob - neighbor_prob
+
+            # Decision logic
+            p = np.random.rand()
+            if p < random_prob:
+                # Completely random action
+                action = m.sample().item()
+            elif p < (random_prob + actual_greedy_prob):
+                # Greedy action
+                action = greedy_action
+            else:
+                # Explore one of the 4 neighbors
+                neighbors = self.get_neighbors(greedy_action)
+                action = np.random.choice(neighbors)
+
+        log_prob = m.log_prob(torch.tensor(action))
+        return action, log_prob
+
+    def get_neighbors(self, action_idx):
+        # Convert the action index to its coordinate
+        dims = (5, 5, 5)  # Assuming the same dimensions as the environment
+        x, y, z = np.unravel_index(action_idx, dims)
+
+        neighbors = []
+        # Generate the possible neighbor coordinates
+        for dx, dy, dz in [(-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0)]:
+            nx, ny, nz = x + dx, y + dy, z + dz
+            if 0 <= nx < dims[0] and 0 <= ny < dims[1] and 0 <= nz < dims[2]:
+                neighbors.append(np.ravel_multi_index((nx, ny, nz), dims))
+
+        return neighbors
+
 
 def get_flattened_state(state):
     return state.flatten()
 
-def discount_rewards(rewards, gamma=0.99):
-    discounted = []
-    cumulative = 0
-    for reward in reversed(rewards):
-        cumulative = reward + gamma * cumulative
-        discounted.insert(0, cumulative)
-    return discounted
 
-def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=0.99, print_every=2, eval_every=10, epsilon_start=1.0, epsilon_end=0.9, epsilon_decay=0.995):
+def reinforce(policy, optimizer, env, n_episodes=1000, max_t=10, gamma=0.99, print_every=2, eval_every=10,
+              epsilon_start=1.0, epsilon_end=0.1, epsilon_decay=0.995):
     scores_deque = deque(maxlen=100)
     scores = []
     eval_losses = []
@@ -73,7 +103,7 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=0.99, prin
         state = env.reset()
         flattened_state = get_flattened_state(state)
         for t in range(max_t):
-            action_idx, log_prob = policy.act(flattened_state, epsilon)
+            action_idx, log_prob = policy.act(flattened_state, mode='explore', epsilon=epsilon)
             saved_log_probs.append(log_prob)
             action = env.actions[action_idx]  # Convert action index to coordinates
             next_state, reward, done = env.step(action)
@@ -87,7 +117,8 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=0.99, prin
         scores.append(sum(rewards))
 
         discounts = [gamma ** i for i in range(len(rewards))]
-        rewards_to_go = [sum([discounts[j] * rewards[j + t] for j in range(len(rewards) - t)]) for t in range(len(rewards))]
+        rewards_to_go = [sum([discounts[j] * rewards[j + t] for j in range(len(rewards) - t)]) for t in
+                         range(len(rewards))]
 
         policy_loss = []
         for log_prob, G in zip(saved_log_probs, rewards_to_go):
@@ -97,6 +128,10 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=0.99, prin
 
         optimizer.zero_grad()
         policy_loss.backward()
+
+        # Gradient clipping
+        #torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=0.1)
+
         optimizer.step()
 
         epsilon = max(epsilon_end, epsilon_decay * epsilon)  # Decay epsilon
@@ -112,9 +147,11 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=0.99, prin
 
     print("Final Evaluation Losses:", eval_losses)
     print("Final Evaluation Rewards:", eval_rewards)
-    plot_eval_loss_and_rewards(eval_losses, eval_rewards, 'eval_loss_and_rewards_' + str(number_of_atoms) + '_atoms', display=True)
+    plot_eval_loss_and_rewards(eval_losses, eval_rewards, 'eval_loss_and_rewards_' + str(number_of_atoms) + '_atoms',
+                               display=True)
     print(scores)
     return scores, eval_losses, eval_rewards
+
 
 def compute_greedy_reward_and_loss(env, policy):
     state = env.reset()
@@ -123,7 +160,7 @@ def compute_greedy_reward_and_loss(env, policy):
     total_reward = 0
 
     while not done:
-        action_idx, _ = policy.act(flattened_state, epsilon=0.0)
+        action_idx, _ = policy.act(flattened_state, mode='greedy')
         action = env.actions[action_idx]  # Convert action index to coordinates
         state, reward, done = env.step(action)
         total_reward += reward
@@ -132,18 +169,22 @@ def compute_greedy_reward_and_loss(env, policy):
     eval_loss = -env.diff_spectra()
     return total_reward, eval_loss
 
+
 if __name__ == "__main__":
     number_of_atoms = 2
-    env = Molecule_Environment(n_atoms=number_of_atoms, chemical_symbols=["B"], dimensions=(11, 11, 11), resolution=np.array([0.2375, 0.2375, 0.2375]), ref_spectra_path=op.join(script_dir, op.join('references', 'reference_1_B.dat')), print_spectra=0)
+    env = Molecule_Environment(n_atoms=number_of_atoms, chemical_symbols=["B"], dimensions=(5, 5, 5),
+                               resolution=np.array([0.475, 0.475, 0.475]),
+                               ref_spectra_path=op.join(script_dir, op.join('references', 'reference_1_B.dat')),
+                               print_spectra=0)
     flatten_dimensions = np.prod(env.dimensions)
     state_size = flatten_dimensions
     action_size = len(env.actions)
     policy = PolicyNetwork(state_size, 64, action_size).to(device)
-    optimizer = optim.Adam(policy.parameters(), lr=0.001)
+    optimizer = optim.AdamW(policy.parameters(), lr=0.0000001, weight_decay=0.01)
     dir_path = "ir"
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path, ignore_errors=True)
-    scores = reinforce(policy, optimizer, env, n_episodes=100, eval_every=1)
+    scores = reinforce(policy, optimizer, env, n_episodes=100, eval_every=10)
     save_weights(policy, 'weight_' + str(number_of_atoms) + '_atoms')
 
     state = env.reset()
@@ -151,7 +192,7 @@ if __name__ == "__main__":
     done = False
 
     while not done:
-        action_idx, _ = policy.act(flattened_state, epsilon=0.0)
+        action_idx, _ = policy.act(flattened_state, mode='greedy')
         action = env.actions[action_idx]
         state, _, done = env.step(action)
         flattened_state = get_flattened_state(state)
@@ -178,11 +219,15 @@ if __name__ == "__main__":
     save_array(resolution, 'res_' + str(number_of_atoms) + '_atoms')
     save_array(grid_dimensions, 'grid_dim_' + str(number_of_atoms) + '_atoms')
 
-    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 0], title='front_view_' + str(number_of_atoms) + '_atoms', display=False)
-    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 90], title='side_view_' + str(number_of_atoms) + '_atoms', display=False)
-    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[90, 0], title='top_view_' + str(number_of_atoms) + '_atoms', display=False)
-    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[30, 30], title='3d_structure_' + str(number_of_atoms) + '_atoms', display=True)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 0],
+                       title='front_view_' + str(number_of_atoms) + '_atoms', display=False)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[0, 90],
+                       title='side_view_' + str(number_of_atoms) + '_atoms', display=False)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[90, 0],
+                       title='top_view_' + str(number_of_atoms) + '_atoms', display=False)
+    plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[30, 30],
+                       title='3d_structure_' + str(number_of_atoms) + '_atoms', display=True)
 
     flattened_state_test = get_flattened_state(env.reset())
-    action, log_prob = policy.act(flattened_state_test)
+    action, log_prob = policy.act(flattened_state_test, mode='greedy')
     print(log_prob)
