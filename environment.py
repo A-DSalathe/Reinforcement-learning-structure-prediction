@@ -56,6 +56,7 @@ class Molecule_Environment:
         self.state = np.zeros(dimensions)
         self.ref_spectra = path_to_refspectra(ref_spectra_path)
         self.print_spectra = print_spectra
+        self.name = "test"
         center = (dimensions[0]//2, dimensions[1]//2, dimensions[2]//2)
         self.state[center] = 1
         self.actions  = generate_3d_coordinates(dimensions)
@@ -63,10 +64,10 @@ class Molecule_Environment:
         self.covalent_radii = 0.9
         self.done = False
         self.chem_symbols = ["B"]
-        self.name = "test"
         self.cumulative_reward = 0
         self.spectra = None
         self.min_reward = min_reward
+        self.max_diff_spectra = self.compute_one_atom_spectrum_diff()
 
     def __str__(self) -> str:
         return f"Molecule Environment(with {self.n_atoms} atoms, in the workspace going from {[0,0,0]} to {self.dimensions/self.resolution}, with resolution={self.resolution})"
@@ -142,7 +143,11 @@ class Molecule_Environment:
         spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False, verbosity=self.print_spectra)
         self.spectra = spectra
         spectra_y = spectra[:,1]
-        return np.linalg.norm(spectra_y - ref_spectra_y, ord=2)*10**6
+        norm_diff = np.linalg.norm(spectra_y - ref_spectra_y, ord=2) * 10 ** 6
+        # Normalize and scale to range [0, -10]
+        scaled_diff = 10 * ((norm_diff - 1)/ (self.max_diff_spectra-1))
+        return scaled_diff
+
     def sample_action(self):
         actions = self.actions
         return actions[np.random.randint(0, len(actions))]
@@ -155,6 +160,23 @@ class Molecule_Environment:
     
     def action_index(self, index):
         return self.actions[index]
+
+    def compute_one_atom_spectrum_diff(self):
+        # Create a state with one atom at the center
+        ref_spectra_y = self.ref_spectra[:, 1]
+        atom_pos = np.where(self.state == 1)
+        coords_atom = list(zip(*atom_pos))
+        # One atom, so the chemical symbols list has one element
+
+        atom_pos = np.where(self.state == 1)
+        coords_atom = list(zip(*atom_pos))
+        # Compute the spectrum with one atom
+        spectra = spectra_from_arrays(positions=np.array(coords_atom) * self.resolution,
+                                      chemical_symbols=self.chem_symbols, name=self.name, writing=False,
+                                      verbosity=self.print_spectra)
+        spectra_y = spectra[:, 1]
+        max_diff_spectra = np.linalg.norm(spectra_y - self.ref_spectra[:, 1], ord=2) * 10 ** 6
+        return max_diff_spectra
 
 
 
