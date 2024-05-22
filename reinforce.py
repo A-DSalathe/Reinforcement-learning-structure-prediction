@@ -20,7 +20,7 @@ script_dir = op.dirname(op.realpath(__file__))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Policy(nn.Module):
-    def __init__(self, state_size, action_size, hidden_size=128):
+    def __init__(self, state_size, action_size, hidden_size=64):
         super(Policy, self).__init__()
         self.fc1 = nn.Linear(state_size, hidden_size)
         #self.relu = nn.ReLU()
@@ -60,7 +60,7 @@ def discount_rewards(rewards, gamma=0.99):
         discounted.insert(0, cumulative)
     return discounted
 
-def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=0.99, print_every=2, eval_every=10, epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=0.995):
+def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=0.99, print_every=2, eval_every=10, epsilon_start=1.0, epsilon_end=0.9, epsilon_decay=0.995):
     scores_deque = deque(maxlen=100)
     scores = []
     eval_losses = []
@@ -142,16 +142,16 @@ def compute_greedy_reward_and_loss(env, policy):
 
 if __name__ == "__main__":
     number_of_atoms = 2
-    env = Molecule_Environment(n_atoms=number_of_atoms, chemical_symbols=["B"], dimensions=(5, 5, 5), resolution=np.array([0.2, 0.2, 0.2]), ref_spectra_path=op.join(script_dir, op.join('references', 'reference_1_B.dat')), print_spectra=0)
+    env = Molecule_Environment(n_atoms=number_of_atoms, chemical_symbols=["B"], dimensions=(11, 11, 11), resolution=np.array([0.1, 0.1, 0.1]), ref_spectra_path=op.join(script_dir, op.join('references', 'reference_1_B.dat')), print_spectra=0)
     flatten_dimensions = np.prod(env.dimensions)
     state_size = flatten_dimensions
     action_size = len(env.actions)
     policy = Policy(state_size, action_size).to(device)
-    optimizer = optim.Adam(policy.parameters(), lr=0.01)
+    optimizer = optim.Adam(policy.parameters(), lr=0.005)
     dir_path = "ir"
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path, ignore_errors=True)
-    scores = reinforce(policy, optimizer, env, n_episodes=10, eval_every=1)
+    scores = reinforce(policy, optimizer, env, n_episodes=100, eval_every=1)
     save_weights(policy, 'weight_' + str(number_of_atoms) + '_atoms')
 
     state = env.reset()
