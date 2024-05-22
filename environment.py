@@ -104,8 +104,8 @@ class Molecule_Environment:
                 reward_spectra = -self.diff_spectra()
                 print("diff spectra =", -self.diff_spectra())
                 reward += reward_spectra
-            reward = np.clip(reward, a_min=self.min_reward,a_max=1)
-            reward_spectra = np.clip(reward_spectra, a_min=self.min_reward, a_max=1)
+            #reward = np.clip(reward, a_min=self.min_reward,a_max=1)
+            #reward_spectra = np.clip(reward_spectra, a_min=self.min_reward, a_max=1)
             self.cumulative_reward += reward_spectra
         else:
             reward = 0
@@ -144,8 +144,8 @@ class Molecule_Environment:
         self.spectra = spectra
         spectra_y = spectra[:,1]
         norm_diff = np.linalg.norm(spectra_y - ref_spectra_y, ord=2) * 10 ** 6
-        # Normalize and scale to range [0, -10]
-        scaled_diff = 10 * ((norm_diff - 1)/ (self.max_diff_spectra-1))
+        #Normalize and scale to range [0, -1]
+        scaled_diff =  5*(norm_diff / self.max_diff_spectra)
         return scaled_diff
 
     def sample_action(self):
@@ -176,6 +176,7 @@ class Molecule_Environment:
                                       verbosity=self.print_spectra)
         spectra_y = spectra[:, 1]
         max_diff_spectra = np.linalg.norm(spectra_y - self.ref_spectra[:, 1], ord=2) * 10 ** 6
+        print("max_diff_spectra",max_diff_spectra)
         return max_diff_spectra
 
 

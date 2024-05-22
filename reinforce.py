@@ -25,7 +25,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Policy3DCNN(nn.Module):
-    def __init__(self, input_shape, action_size, hidden_size=128):
+    def __init__(self, input_shape, action_size, hidden_size=64):
         super(Policy3DCNN, self).__init__()
         self.conv1 = nn.Conv3d(1, 32, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv3d(32, 64, kernel_size=3, stride=1, padding=1)
@@ -56,11 +56,10 @@ class Policy3DCNN(nn.Module):
         return action, log_prob
 
 
-
 def get_3d_state(state):
     return state  # Now state is already the 3D grid
 
-def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print_every=2, eval_every=10, epsilon_start=1.0, epsilon_end=1, epsilon_decay=0.995):
+def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print_every=2, eval_every=10, epsilon_start=1.0, epsilon_end=1.0, epsilon_decay=0.995):
     scores_deque = deque(maxlen=100)
     scores = []
     eval_losses = []
@@ -71,13 +70,15 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print
         saved_log_probs = []
         rewards = []
         state = env.reset()
+        flattened_state = state
         for t in range(max_t):
-            action_idx, log_prob = policy.act(state, epsilon)
+            action_idx, log_prob = policy.act(flattened_state, epsilon)
             saved_log_probs.append(log_prob)
             action = env.actions[action_idx]  # Convert action index to coordinates
             next_state, reward, done = env.step(action)
             rewards.append(reward)
             state = next_state
+            flattened_state = state
             if done:
                 break
 
@@ -89,7 +90,8 @@ def reinforce(policy, optimizer, env, n_episodes=100, max_t=10, gamma=1.0, print
         scores.append(sum(rewards))
 
         discounts = [gamma ** i for i in range(len(rewards) + 1)]
-        rewards_to_go = [sum([discounts[j] * rewards[j + t] for j in range(len(rewards) - t)]) for t in range(len(rewards))]
+        rewards_to_go = [sum([discounts[j] * rewards[j + t] for j in range(len(rewards) - t)]) for t in
+                         range(len(rewards))]
 
         policy_loss = []
         for log_prob, G in zip(saved_log_probs, rewards_to_go):
@@ -154,7 +156,7 @@ if __name__ == "__main__":
             print(f"An error occurred while trying to remove the directory: {e}")
     else:
         print(f"Directory {dir_path} does not exist.")
-    scores, eval_losses, eval_rewards = reinforce(policy, optimizer, env, n_episodes=10, eval_every=1)
+    scores, eval_losses, eval_rewards = reinforce(policy, optimizer, env, n_episodes=100, eval_every=10)
     save_weights(policy, 'weight_' + str(number_of_atoms) + '_atoms')
 
     # Use the trained policy to generate the molecule

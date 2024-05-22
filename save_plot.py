@@ -110,14 +110,25 @@ def save_weights(policy,name):
     file_path = op.join(folder_path,name+'.pth')
     torch.save(policy.state_dict(), file_path)
 
+
+def normalize(data):
+    """Normalize data to the range [0, 1]."""
+    min_val = np.min(data)
+    max_val = np.max(data)
+    return (data - min_val) / (max_val - min_val)
+
+
 def plot_eval_loss_and_rewards(eval_losses, eval_rewards, title, display=False):
+    normalized_eval_losses = eval_losses#normalize(np.array(eval_losses))
+    normalized_eval_rewards = eval_rewards#normalize(np.array(eval_rewards))
+
     plt.figure(figsize=(10, 5))
     intervals = np.arange(0, len(eval_losses) * 10, 10)  # Assuming eval_every is 10
-    plt.plot(intervals, eval_losses, label='Evaluation Loss')
-    plt.plot(intervals, eval_rewards, label='Greedy Reward')
+    plt.plot(intervals, normalized_eval_losses, label='Evaluation Loss (Normalized)')
+    plt.plot(intervals, normalized_eval_rewards, label='Greedy Reward (Normalized)')
     plt.xlabel('Episode')
-    plt.ylabel('Value')
-    plt.title('Evaluation Loss and Greedy Reward over Time')
+    plt.ylabel('Normalized Value')
+    plt.title('Evaluation Loss and Greedy Reward over Time (Normalized)')
     plt.legend()
     folder_eval_loss = 'eval_loss_and_rewards'
     folder_path = op.join(script_dir, folder_eval_loss)
