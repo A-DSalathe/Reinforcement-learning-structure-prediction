@@ -6,6 +6,7 @@ from ase.vibrations import Infrared
 from ase import Atoms
 import os
 import os.path as op
+from scipy import spatial
 script_dir = op.dirname(op.realpath(__file__))
 
 def generate_3d_coordinates(shape):
@@ -130,27 +131,25 @@ class Molecule_Environment:
             reward = 0  # Reward close to 0 within the acceptable range
 
         return reward
-    
+
     def diff_spectra(self):
-        # Compute the spectra of the current state
-        #self.state = spectra_from_arrays()
-        ref_spectra_y = self.ref_spectra[:,1]
+        ref_spectra_y = self.ref_spectra[:, 1]
         atom_pos = np.where(self.state == 1)
         coords_atom = list(zip(*atom_pos))
-        #print(coords_atom*self.resolution)
-        # print(coords_atom*self.resolution)
-        # Compute the difference between the current state spectra and the reference spectra
-        spectra = spectra_from_arrays(positions=np.array(coords_atom)*self.resolution, chemical_symbols=self.chem_symbols, name=self.name, writing=False, verbosity=self.print_spectra)
+        spectra = spectra_from_arrays(positions=np.array(coords_atom) * self.resolution,
+                                      chemical_symbols=self.chem_symbols, name=self.name, writing=False,
+                                      verbosity=self.print_spectra)
         self.spectra = spectra
-        spectra_y = spectra[:,1]
-        norm_diff = np.linalg.norm(spectra_y - ref_spectra_y, ord=2) * 10 ** 6
-        #Normalize and scale to range [0, -1]
-        scaled_diff =  5*(norm_diff / self.max_diff_spectra)
-        return scaled_diff
+        spectra_y = spectra[:, 1]
 
-    def sample_action(self):
-        actions = self.actions
-        return actions[np.random.randint(0, len(actions))]
+        # Compute cosine similarity
+        ref_spectra_y = ref_spectra_y
+        spectra_y = spectra_y
+        cosine_sim = 1-spatial.distance.cosine(ref_spectra_y, spectra_y)
+
+        # Scale cosine distance to range [0, -10]
+        scaled_diff = 10 * cosine_sim
+        return scaled_diff
     
     def render(self):
         print(self.state)

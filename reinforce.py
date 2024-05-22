@@ -28,7 +28,9 @@ class Policy3DCNN(nn.Module):
     def __init__(self, input_shape, action_size, hidden_size=64):
         super(Policy3DCNN, self).__init__()
         self.conv1 = nn.Conv3d(1, 32, kernel_size=3, stride=1, padding=1)
+        self.pool1 = nn.MaxPool3d((2, 2, 2))
         self.conv2 = nn.Conv3d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.pool2 = nn.MaxPool3d((2, 2, 2))
         self.fc1 = nn.Linear(64 * input_shape[0] * input_shape[1] * input_shape[2], hidden_size)
         self.fc2 = nn.Linear(hidden_size, action_size)
 
@@ -145,7 +147,7 @@ if __name__ == "__main__":
     state_size = 1  # Not used for 3D CNN
     action_size = len(env.actions)
     policy = Policy3DCNN(input_shape, action_size).to(device)
-    optimizer = optim.Adam(policy.parameters(), lr=0.01)
+    optimizer = optim.Adam(policy.parameters(), lr=0.005)
     dir_path = "ir"  # Change this to an absolute path if needed, e.g., r"C:\path\to\ir"
     if os.path.exists(dir_path):
         print(f"Directory {dir_path} exists, attempting to remove it.")
