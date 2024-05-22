@@ -6,6 +6,7 @@ from ase.vibrations import Infrared
 from ase import Atoms
 import os
 import os.path as op
+
 script_dir = op.dirname(op.realpath(__file__))
 
 def generate_3d_coordinates(shape):
@@ -120,7 +121,7 @@ class Molecule_Environment:
         
         # Smooth penalty function
         if min_distance == 0:
-            reward = 0
+            reward = -10
         elif min_distance < lower_bound:
             reward = -np.exp(-10 * (min_distance - lower_bound))  # Smooth penalty for being too close
         elif min_distance > upper_bound:
