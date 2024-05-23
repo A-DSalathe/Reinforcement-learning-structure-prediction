@@ -44,6 +44,19 @@ def path_to_refspectra(ref_spectra_path):
     return data
 
 
+def calculate_pairwise_distances(state, resolution):
+    atom_positions = np.argwhere(state == 1)
+    if len(atom_positions) < 2:
+        return np.array([0])  # No meaningful distances to compute
+
+    distances = []
+    for i in range(len(atom_positions)):
+        for j in range(i + 1, len(atom_positions)):
+            dist = np.linalg.norm((atom_positions[i] - atom_positions[j]) * resolution)
+            distances.append(dist)
+    return np.array(distances)
+
+
 class Molecule_Environment:
     def __init__(self, n_atoms: int = 2, chemical_symbols: list = ["B"], dimensions=(11, 11, 11),
                  resolution=np.array([0.2, 0.2, 0.2]),
@@ -142,7 +155,6 @@ class Molecule_Environment:
 
         return reward
 
-
     def diff_spectra(self):
         ref_spectra_y = self.ref_spectra[:, 1]
         atom_pos = np.where(self.state == 1)
@@ -166,6 +178,10 @@ class Molecule_Environment:
 
     def action_index(self, index):
         return self.actions[index]
+
+    def get_state_features(self):
+        distances = calculate_pairwise_distances(self.state, self.resolution)
+        return distances
 
 
 if __name__ == "__main__":

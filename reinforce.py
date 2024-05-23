@@ -38,9 +38,9 @@ class PolicyNetwork(nn.Module):
         x = self.fc3(x)
         return torch.softmax(x, dim=1)
 
-    def act(self, state, mode='explore', epsilon=0.1):
-        state = torch.from_numpy(state).float().unsqueeze(0).to(device)
-        probs = self.forward(state).squeeze(0)
+    def act(self, state_features, mode='explore', epsilon=0.1):
+        state_features = torch.from_numpy(state_features).float().unsqueeze(0).to(device)
+        probs = self.forward(state_features).squeeze(0)
         m = Categorical(probs)
 
         greedy_action = torch.argmax(probs).item()
@@ -72,7 +72,7 @@ class PolicyNetwork(nn.Module):
 
     def get_neighbors(self, action_idx):
         # Convert the action index to its coordinate
-        dims = (5, 5, 5)  # Assuming the same dimensions as the environment
+        dims = (11, 11, 11)  # Assuming the same dimensions as the environment
         x, y, z = np.unravel_index(action_idx, dims)
 
         neighbors = []
@@ -83,10 +83,6 @@ class PolicyNetwork(nn.Module):
                 neighbors.append(np.ravel_multi_index((nx, ny, nz), dims))
 
         return neighbors
-
-
-def get_flattened_state(state):
-    return state.flatten()
 
 
 def reinforce(policy, optimizer, env, n_episodes=1000, max_t=10, gamma=0.99, print_every=2, eval_every=10,
@@ -101,15 +97,15 @@ def reinforce(policy, optimizer, env, n_episodes=1000, max_t=10, gamma=0.99, pri
         saved_log_probs = []
         rewards = []
         state = env.reset()
-        flattened_state = get_flattened_state(state)
+        state_features = env.get_state_features()
         for t in range(max_t):
-            action_idx, log_prob = policy.act(flattened_state, mode='explore', epsilon=epsilon)
+            action_idx, log_prob = policy.act(state_features, mode='explore', epsilon=epsilon)
             saved_log_probs.append(log_prob)
             action = env.actions[action_idx]  # Convert action index to coordinates
             next_state, reward, done = env.step(action)
             rewards.append(reward)
             state = next_state
-            flattened_state = get_flattened_state(state)
+            state_features = env.get_state_features()
             if done:
                 break
 
@@ -130,7 +126,7 @@ def reinforce(policy, optimizer, env, n_episodes=1000, max_t=10, gamma=0.99, pri
         policy_loss.backward()
 
         # Gradient clipping
-        #torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=0.1)
+        torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=0.01)
 
         optimizer.step()
 
@@ -155,16 +151,16 @@ def reinforce(policy, optimizer, env, n_episodes=1000, max_t=10, gamma=0.99, pri
 
 def compute_greedy_reward_and_loss(env, policy):
     state = env.reset()
-    flattened_state = get_flattened_state(state)
+    state_features = env.get_state_features()
     done = False
     total_reward = 0
 
     while not done:
-        action_idx, _ = policy.act(flattened_state, mode='greedy')
+        action_idx, _ = policy.act(state_features, mode='greedy')
         action = env.actions[action_idx]  # Convert action index to coordinates
         state, reward, done = env.step(action)
         total_reward += reward
-        flattened_state = get_flattened_state(state)
+        state_features = env.get_state_features()
 
     eval_loss = -env.diff_spectra()
     return total_reward, eval_loss
@@ -172,30 +168,29 @@ def compute_greedy_reward_and_loss(env, policy):
 
 if __name__ == "__main__":
     number_of_atoms = 2
-    env = Molecule_Environment(n_atoms=number_of_atoms, chemical_symbols=["B"], dimensions=(5, 5, 5),
-                               resolution=np.array([0.475, 0.475, 0.475]),
+    env = Molecule_Environment(n_atoms=number_of_atoms, chemical_symbols=["B"], dimensions=(11, 11, 11),
+                               resolution=np.array([0.2, 0.2, 0.2]),
                                ref_spectra_path=op.join(script_dir, op.join('references', 'reference_1_B.dat')),
                                print_spectra=0)
-    flatten_dimensions = np.prod(env.dimensions)
-    state_size = flatten_dimensions
+    input_dim = number_of_atoms * (number_of_atoms - 1) // 2  # Maximum number of pairwise distances
     action_size = len(env.actions)
-    policy = PolicyNetwork(state_size, 64, action_size).to(device)
-    optimizer = optim.AdamW(policy.parameters(), lr=0.0000001, weight_decay=0.01)
+    policy = PolicyNetwork(input_dim, 16, action_size).to(device)
+    optimizer = optim.AdamW(policy.parameters(), lr=0.0001, weight_decay=0.01)
     dir_path = "ir"
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path, ignore_errors=True)
-    scores = reinforce(policy, optimizer, env, n_episodes=100, eval_every=10)
+    scores, eval_losses, eval_rewards = reinforce(policy, optimizer, env, n_episodes=500, eval_every=10)
     save_weights(policy, 'weight_' + str(number_of_atoms) + '_atoms')
 
     state = env.reset()
-    flattened_state = get_flattened_state(state)
+    state_features = env.get_state_features()
     done = False
 
     while not done:
-        action_idx, _ = policy.act(flattened_state, mode='greedy')
+        action_idx, _ = policy.act(state_features, mode='greedy')
         action = env.actions[action_idx]
         state, _, done = env.step(action)
-        flattened_state = get_flattened_state(state)
+        state_features = env.get_state_features()
 
     ref_spectra_y = env.ref_spectra[:, 1]
     atom_pos = np.where(env.state == 1)
@@ -228,6 +223,6 @@ if __name__ == "__main__":
     plot_and_save_view(positions, resolution, grid_dimensions, view_angle=[30, 30],
                        title='3d_structure_' + str(number_of_atoms) + '_atoms', display=True)
 
-    flattened_state_test = get_flattened_state(env.reset())
-    action, log_prob = policy.act(flattened_state_test, mode='greedy')
+    state_features_test = env.get_state_features()
+    action, log_prob = policy.act(state_features_test, mode='greedy')
     print(log_prob)
