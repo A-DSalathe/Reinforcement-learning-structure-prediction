@@ -45,14 +45,27 @@ def plot_sphere(ax, center, radius, color='r'):
     y = center[1] + radius * np.outer(np.sin(u), np.sin(v))
     z = center[2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
     ax.plot_surface(x, y, z, color=color, alpha=0.6)
+def calculate_centroid(positions):
+    return np.mean(positions, axis=0)
 
+def center_molecule(positions, grid_dimensions, resolution):
+    centroid = calculate_centroid(positions)
+    grid_center = np.array(grid_dimensions) * resolution / 2.0
+    shift_vector = grid_center - centroid
+    shifted_positions = positions + shift_vector
+    return shifted_positions
 
 def plot_and_save_view(positions, resolution, grid_dimensions, view_angle, title, display=False):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    for pos in positions:
-        plot_sphere(ax, pos, radius=0.1)
+    # Center the molecule
+    centered_positions = center_molecule(np.array(positions), grid_dimensions, resolution)
+
+    # Plot spheres at atom positions
+    for pos in centered_positions:
+        plot_sphere(ax, pos, radius=0.1, color='r')  # Adjust the radius and color as needed
+
 
     # Set labels
     ax.set_xlabel('X')
@@ -127,13 +140,17 @@ def plot_eval_loss_and_rewards(eval_losses, eval_rewards, title, display=False):
     plt.savefig(file_path)
     if display:
         plt.show()
-    
+def read_npy(path):
+    data = np.genfromtxt(path, dtype=float, skip_header=2, usecols=(1, 2, 3))
+    return data
 if __name__ == "__main__":
-    test_array = np.array([[1,2,4],[1,2,3]])
-    test_name = 'name'
-    save_array(array=test_array,title=test_name)
-    folder_name = 'numpy_array_folder'
-    folder_path = op.join(script_dir,folder_name)
-    file_path = op.join(folder_path,test_name+'.npy')
-    loaded_array = np.load(file_path)
-    print(loaded_array)
+    # test_array = np.array([[1,2,4],[1,2,3]])
+    # test_name = 'name'
+    # save_array(array=test_array,title=test_name)
+    # folder_name = 'numpy_array_folder'
+    # folder_path = op.join(script_dir,folder_name)
+    # file_path = op.join(folder_path,test_name+'.npy')
+    # loaded_array = np.load(file_path)
+    # print(loaded_array)
+    array = read_npy(op.join(script_dir,op.join('references','reference_1_B.xyz')))
+    plot_and_save_view(array, [0.2, 0.2, 0.2], [11, 11, 11], [30, 30], 'ref', display=True)

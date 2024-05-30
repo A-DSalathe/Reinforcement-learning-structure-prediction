@@ -8,6 +8,7 @@ import os
 import os.path as op
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from save_plot import *
 
 script_dir = op.dirname(op.realpath(__file__))
 
@@ -48,6 +49,7 @@ def find_distances_to_new_point(array, new_point):
 def path_to_refspectra(ref_spectra_path):
         data = np.loadtxt(ref_spectra_path, skiprows=2)
         return data
+
 def generate_spherical_shell(inner_radius, outer_radius):
     # Define the center of the sphere in the grid
     inner_radius_ceil = int(np.ceil(inner_radius))
@@ -102,6 +104,18 @@ def convert_numpy_where_numpy(array):
     x3 = array[2]
     output = np.array([x1[0],x2[0],x3[0]])
     return output
+
+def calculate_pairwise_distances(state, resolution):
+    atom_positions = np.argwhere(state != 0)
+    if len(atom_positions) < 2:
+        return np.array([0])  # No meaningful distances to compute
+
+    distances = []
+    for i in range(len(atom_positions)):
+        for j in range(i + 1, len(atom_positions)):
+            dist = np.linalg.norm((atom_positions[i] - atom_positions[j]) * resolution)
+            distances.append(dist)
+    return np.array(distances)
 
 class Molecule_Environment:
     def __init__(self, n_atoms: int = 3, chemical_symbols: list = ["B"], dimensions = (51,51,51), resolution=np.array([0.2,0.2,0.2]), ref_spectra_path = op.join(script_dir,op.join('references','reference_1_B.dat')), print_spectra=0, min_reward=-10, cov_radi=0.9):
@@ -230,27 +244,40 @@ class Molecule_Environment:
         coord_atom_sel = convert_numpy_where_numpy(coord_atom_sel)
         # print(coord.shape)
         new_coord = coord + coord_atom_sel
-        new_coord = np.clip(new_coord,a_min=0, a_max=self.dimensions[0])
+        new_coord = np.round(new_coord).astype(int)
+        new_coord = np.clip(new_coord,a_min=0, a_max=self.dimensions[0]-1)
         new_coord = np.round(new_coord).astype(int)
         return new_coord
+    def get_state_features(self):
+        distances = calculate_pairwise_distances(self.state, self.resolution)
+        return distances
+
+
 
 if __name__ == "__main__":
-    env = Molecule_Environment(dimensions=(5,5,5),resolution=np.array([0.5,0.5,0.5]))
-    # print(env.actions.shape)
-    # print(env.actions)
+    # env = Molecule_Environment(dimensions=(5,5,5),resolution=np.array([0.5,0.5,0.5]))
+    # print(env)
+    # # print(env.actions)
     # print(env.sample_action())
-    done = False
-    while not done:
-        action = env.sample_action()
-        state, reward, done = env.step(action)
-        print(reward,done)
-    print(state)
-    # sphere = generate_spherical_shell(2.5, 3.5)
-    # print(sphere)
-    # # Extract coordinates of the spherical shell's surface
-    # coords = np.argwhere(sphere == 1)
-
+    # done = False
+    # while not done:
+    #     action = env.sample_action()
+    #     state, reward, done = env.step(action)
+    #     print(reward,done)
+    # print(state)
+    sphere = generate_spherical_shell(2.5, 3.5)
+    print(sphere)
+    # Extract coordinates of the spherical shell's surface
+    coords = np.argwhere(sphere == 1)
+    coords = coords-np.mean(coords, axis=0)
+    # plot_sphere(coords,0,)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2], c='b', marker='o')
+    plt.show()
+    # test_array = read_npy(op.join(script_dir,op.join('references','reference_3_B.xyz')))
     # fig = plt.figure()
     # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2], c='b', marker='o')
+    # ax.scatter(test_array[:, 0], test_array[:, 1], test_array[:, 2], c='b', marker='o')
     # plt.show()
+    

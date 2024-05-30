@@ -144,7 +144,7 @@ def compute_greedy_reward_and_loss(env, policy):
 if __name__ == "__main__":
     # Assuming Molecule_Environment is defined as provided and properly imported
     number_of_atoms = 7
-    env = Molecule_Environment(n_atoms = number_of_atoms, chemical_symbols = ["B"], dimensions = (41,41,41), resolution=np.array([0.4,0.4,0.4]), ref_spectra_path = op.join(script_dir,op.join('references','reference_custom_1.dat')), print_spectra=0, cov_radi=2)
+    env = Molecule_Environment(n_atoms = number_of_atoms, chemical_symbols = ["B"], dimensions = (51,51,51), resolution=np.array([0.4,0.4,0.4]), ref_spectra_path = op.join(script_dir,op.join('references','reference_custom_1.dat')), print_spectra=0, cov_radi=2)
     flatten_dimensions = np.prod(env.dimensions)
     state_size = flatten_dimensions
     action_size = len(env.actions)
@@ -160,7 +160,7 @@ if __name__ == "__main__":
             print(f"An error occurred while trying to remove the directory: {e}")
     else:
         print(f"Directory {dir_path} does not exist.")
-    scores = reinforce(policy, optimizer, env, n_episodes=20)
+    scores = reinforce(policy, optimizer, env, n_episodes=1000)
     save_weights(policy,'weight_'+str(number_of_atoms)+'_atoms')
 
     state = env.reset()
